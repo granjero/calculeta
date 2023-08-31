@@ -36,7 +36,6 @@ unsigned long timestampUltimoCronometroImpreso = 0;
 int unSegundo = 1000; // un segundo = mil milisegundos
 int tiempoParaIncrementarSerie = 3000; // el tiempo que tiene el usuario para incrementar series
 int tiempoParaResetar = 3500;
-int pressReset = 4000; // 4 segundos para resetear
 unsigned long timestampBotonPresionado = 0;
 
 typedef struct
