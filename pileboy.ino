@@ -23,7 +23,7 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 Button boton(BOTON);
 
 boolean contando = false;
-boolean esperandoIncrementoSerie = false;
+boolean incrementarSerie = false;
 
 unsigned long cronometroPiletas= 0;
 unsigned long cronometroTotal = 0;
@@ -47,13 +47,13 @@ typedef struct
 datos_serie series[20];
 
 // coordenadas y tamaños de las cosas impresas.
-int16_t xContador, yContador, xMensajeMtsSerie, yMensajeMtsSerie, xCronometro, yCronometro;
+int16_t xCronometro, yCronometro;
 uint16_t wContador, hContador, wMensajeMtsSerie, hMensajeMtsSerie, wCronometro, hCronometro;
 
 void setup() {
   boton.begin();
   tft.begin();
-  tft.setRotation(2);
+  tft.setRotation(0);
   tft.fillScreen(ILI9341_WHITE);
   tft.fillScreen(0x7DFA);
   tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);  
@@ -62,28 +62,30 @@ void setup() {
 
 void loop() {
 
-  if (!contando)
+  if (!contando) // no estamos contando
   {
     if (boton.pressed())
     {
       contando = true;
       timestampBotonPresionado = millis();
       tft.fillScreen(ILI9341_BLACK);
-      imprimeContador(contadorPiletas, ILI9341_WHITE);
+      imprimeContador(0, ILI9341_WHITE);
+      imprimeMetros(ILI9341_GREEN, ILI9341_YELLOW);
+      imprimeSeries();
     }
   }
   else // comenzó a funcionar el aparato
   {
     if (boton.pressed())
     {
-      if(!esperandoIncrementoSerie)
+      timestampBotonPresionado = millis();
+      if(!incrementarSerie) //va a aumentar el numero de piletas
       {
-        esperandoIncrementoSerie = true;
-        timestampBotonPresionado = millis();
+        incrementarSerie = true;
         contadorPiletas++;
         contadorTotal++;
       }
-      else // ventana temporal para aumentar la serie
+      else // va a aumentar el numero de series
       {
         series[contadorSeries].piletas = contadorPiletas;
         series[contadorSeries].tiempo = cronometroPiletas;
@@ -91,22 +93,29 @@ void loop() {
 
         contadorPiletas = 0;
         cronometroPiletas = 0;
-        imprimeSeries();
       }
+      imprimeSeries();
+      imprimeMetros(ILI9341_GREEN, ILI9341_GREENYELLOW);
       imprimeContador(contadorPiletas, ILI9341_WHITE);
     }
     imprimeCronometros(ILI9341_WHITE);
-    imprimeMetros(ILI9341_GREEN, ILI9341_GREENYELLOW);
-    timerIncrementoSerie();
+    sePuedeIncrementarSerie();
 
     // RESET
     if(boton.released()) {
       if (millis() - timestampBotonPresionado >= tiempoParaResetar) {
+        timestampBotonPresionado = millis();
         contando = false;
         cronometroPiletas= 0;
         cronometroTotal = 0;
         contadorPiletas = 0;
         contadorTotal = 0;
+
+        for (int i = 0; i < 10; )
+        {
+          series[i].tiempo = 0;
+          series[i].piletas = 0;
+        }
         
         tft.fillScreen(ILI9341_WHITE);
         tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, ILI9341_NAVY);
@@ -115,11 +124,11 @@ void loop() {
   }
 }
 
-void timerIncrementoSerie()
+void sePuedeIncrementarSerie()
 {
   if (millis() - timestampBotonPresionado >= tiempoParaIncrementarSerie)
   {
-    esperandoIncrementoSerie = false;
+    incrementarSerie = false;
   }
 }
 
@@ -142,7 +151,6 @@ void imprimeCronometros(uint16_t color)
     tft.println(" " + relojSerie);
 
     tft.setCursor(0, ALTO_PANTALLA - hCronometro);
-    tft.write(0xE7); // sibolo del reloj
     tft.println(" " + relojTotal);
   }
 }
@@ -162,82 +170,107 @@ String reloj(unsigned int tiempo)
 
 void imprimeContador(int numero, uint16_t colorTexto)
 {
+  int16_t x, y;
+  uint16_t w, h;
+
   tft.setTextWrap(false);
   tft.setTextColor(colorTexto, ILI9341_BLACK);
   tft.setTextSize(15);
-  tft.getTextBounds((String)numero, 0, 0, &xContador, &yContador, &wContador, &hContador);
-  tft.setCursor(ANCHO_PANTALLA - wContador, 0);
+  tft.getTextBounds((String)numero, 0, 0, &x, &y, &w, &h);
+  tft.setCursor(ANCHO_PANTALLA - w, 0);
   tft.println(numero);
+  
+  hContador = h;
 }
 
 void imprimeMetros(uint16_t colorSerie, uint16_t colorTotal)
 {
-  String m = "m";
-  String mtsSerie = String(contadorPiletas * LARGO_PILETA);
-  String mtsTotal = String(contadorTotal * LARGO_PILETA);
-  String mensajeSerie = mtsSerie + m;
-  String mensajeTotal = mtsTotal + m;
+  int16_t x, y;
+  uint16_t w, h;
+  String mtsSerie = "  " + String(contadorPiletas * LARGO_PILETA) + "m";
+  String mtsTotal = String(contadorTotal * LARGO_PILETA) + "m";
 
   tft.setTextSize(3);
-  
-  tft.getTextBounds((String)cuatroChars(mensajeSerie), 0, 0, &xMensajeMtsSerie, &yMensajeMtsSerie, &wMensajeMtsSerie, &hMensajeMtsSerie);
-  tft.setCursor(ANCHO_PANTALLA - wMensajeMtsSerie, hContador);
+  tft.getTextBounds((String)mtsSerie, 0, 0, &x, &y, &w, &h);
   tft.setTextColor(colorSerie, ILI9341_BLACK);
-  tft.println(cuatroChars(mensajeSerie));
+  tft.setCursor(ANCHO_PANTALLA - w, hContador);
+  tft.println(mtsSerie);
 
   tft.setTextSize(4);
-  tft.getTextBounds((String)mensajeTotal, 0, 0, &xMensajeMtsSerie, &yMensajeMtsSerie, &wMensajeMtsSerie, &hMensajeMtsSerie);
-  tft.setCursor(ANCHO_PANTALLA - wMensajeMtsSerie, ALTO_PANTALLA - hMensajeMtsSerie);
+  tft.getTextBounds((String)mtsTotal, 0, 0, &x, &y, &w, &h);
   tft.setTextColor(colorTotal, ILI9341_BLACK);
-  tft.println(mensajeTotal);
-  tft.setTextSize(3);
-  tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-}
-
-String cuatroChars(const String& input)
-{
-  String result;
-    
-  if (input.length() >= 4) {
-    return input;
-  } else {
-      for (int i = 0; i < (4 - input.length()); ++i) {
-          result += " ";
-      }
-      result += input;
-  }
-  return result;
+  tft.setCursor(ANCHO_PANTALLA - w, ALTO_PANTALLA - h);
+  tft.println(mtsTotal);
 }
 
 void imprimeSeries()
 {
   tft.setCursor(0, 150);
   tft.setTextSize(2);
-  tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
 
-  std::map<int, int> counts;  // Using a map to store counts
+  std::map<int, std::pair<int, int>> counts;  // Declare a map named 'counts'
 
-  // Count occurrences of each unique 'piletas' value
+  // Count occurrences of each unique 'piletas' value and store associated 'tiempo'
   for (int i = 0; i < 10; ++i) {
     if (series[i].piletas == 0) continue;
     int piletas = series[i].piletas;
-    counts[piletas]++;
+    int tiempo = series[i].tiempo;
+
+    // If the 'piletas' value is not yet in the map, add it
+    if (counts.find(piletas) == counts.end()) {
+        counts[piletas] = std::make_pair(1, tiempo);
+    } else {
+        // Otherwise, increment the count and update 'tiempo'
+        counts[piletas].first++;
+        counts[piletas].second += tiempo;
+    }
   }
 
-  // Print the counts in the desired format
   for (const auto &entry : counts) {
+    int piletas = entry.first;
+    int count = entry.second.first;
+    int totalTiempo = entry.second.second;
+
     tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
-    tft.print(entry.second);
+    tft.print(count);
     tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
-    tft.print("x");
+    tft.print("x ");
     tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
-    tft.print(entry.first);
+    tft.print(piletas);
     tft.print(" ");
+    tft.setTextColor(ILI9341_GREENYELLOW, ILI9341_BLACK);
+    tft.print(count * piletas * LARGO_PILETA);
+    tft.print("m ");
     tft.setTextColor(0x90D5, ILI9341_BLACK);
-    tft.print(entry.second * entry.first * LARGO_PILETA);
-    tft.println("m  ");
-    tft.setCursor(0, tft.getCursorY()+2);
+    tft.print(reloj(totalTiempo));
+    tft.print(" ");
+    tft.println();
+    tft.setCursor(0, tft.getCursorY()+5);
   }
+
+  // std::map<int, int> counts;  // Using a map to store counts
+  //
+  // // Count occurrences of each unique 'piletas' value
+  // for (int i = 0; i < 10; ++i) {
+  //   if (series[i].piletas == 0) continue;
+  //   int piletas = series[i].piletas;
+  //   counts[piletas]++;
+  // }
+  //
+  // // Print the counts in the desired format
+  // for (const auto &entry : counts) {
+  //   tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
+  //   tft.print(entry.second);
+  //   tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
+  //   tft.print("x");
+  //   tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
+  //   tft.print(entry.first);
+  //   tft.print(" ");
+  //   tft.setTextColor(0x90D5, ILI9341_BLACK);
+  //   tft.print(entry.second * entry.first * LARGO_PILETA);
+  //   tft.println("m  ");
+  //   tft.setCursor(0, tft.getCursorY()+2);
+  // }
 
 
 }
