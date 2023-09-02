@@ -34,7 +34,7 @@ int contadorSeries = 0;
 
 unsigned long timestampUltimoCronometroImpreso = 0;
 int unSegundo = 1000; // un segundo = mil milisegundos
-int tiempoParaIncrementarSerie = 10000; // el tiempo que tiene el usuario para incrementar series
+int tiempoParaIncrementarSerie = 3000; // el tiempo que tiene el usuario para incrementar series
 int tiempoParaResetar = 3500;
 unsigned long timestampBotonPresionado = 0;
 
