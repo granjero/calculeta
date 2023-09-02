@@ -3,34 +3,36 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
 #include "Button.h"
-#include "logo.h"
+#include "Logo.h"
 
+// reed switch
 #define BOTON     D1
+// display pins
 #define TFT_CS    D2
 #define TFT_RST   D3
 #define TFT_DC    D4
 #define TFT_CLK   D5
 #define TFT_MOSI  D7
-// #define TFT_MISO  D8
-
-#define LARGO_PILETA    50
+// display dimensiones
 #define ANCHO_PANTALLA  240 
 #define ALTO_PANTALLA   320
 
+#define LARGO_PILETA    50
+
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
-// Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
 
 Button boton(BOTON);
 
 boolean contando = false;
-boolean incrementarSerie = false;
+boolean incrementaPileta = true;
 
 unsigned long cronometroPiletas= 0;
+unsigned long cronometroSeries= 0;
 unsigned long cronometroTotal = 0;
 
 int contadorPiletas = 0;
-int contadorTotal = 0;
 int contadorSeries = 0;
+int contadorTotal = 0;
 
 unsigned long timestampUltimoCronometroImpreso = 0;
 int unSegundo = 1000; // un segundo = mil milisegundos
@@ -78,25 +80,26 @@ void loop() {
   {
     if (boton.pressed())
     {
-      timestampBotonPresionado = millis();
-      if(!incrementarSerie) // aumenta el numero de piletas
+      timestampBotonPresionado = millis(); 
+      if(incrementaPileta) // aumenta el numero de piletas
       {
-        incrementarSerie = true;
+        incrementaPileta = false; // 
         contadorPiletas++;
         contadorTotal++;
-        // tft.fillScreen(ILI9341_RED);
-        // tft.fillScreen(ILI9341_BLACK);
+        cronometroPiletas = 0;
       }
       else // aumenta el numero de series
       {
-        if (contadorPiletas != 0) 
+        if (contadorPiletas != 0) // no tiene sentido una serie de 0 piletas 
         {
+          // almacena los valores en la estructura
           series[contadorSeries].piletas = contadorPiletas;
-          series[contadorSeries].tiempo = cronometroPiletas;
+          series[contadorSeries].tiempo = cronometroSeries;
           contadorSeries++;
-
+          // resetea las variables para la proxima cuenta.
           contadorPiletas = 0;
           cronometroPiletas = 0;
+          cronometroSeries = 0;
         }
       }
       imprimeSeries();
@@ -111,7 +114,7 @@ void loop() {
       if (millis() - timestampBotonPresionado >= tiempoParaResetar) {
         timestampBotonPresionado = millis();
         contando = false;
-        cronometroPiletas= 0;
+        cronometroSeries= 0;
         cronometroTotal = 0;
         contadorPiletas = 0;
         contadorTotal = 0;
@@ -133,7 +136,7 @@ void sePuedeIncrementarSerie()
 {
   if (millis() - timestampBotonPresionado >= tiempoParaIncrementarSerie)
   {
-    incrementarSerie = false;
+    incrementaPileta = true;
   }
 }
 
@@ -143,12 +146,18 @@ void imprimeCronometros(uint16_t color)
   {
     timestampUltimoCronometroImpreso = millis();
     cronometroPiletas++;
+    cronometroSeries++;
     cronometroTotal++;
 
-    String relojSerie = reloj(cronometroPiletas);
+    String relojPileta = reloj(cronometroPiletas);
+    String relojSerie = reloj(cronometroSeries);
     String relojTotal = reloj(cronometroTotal);
 
     tft.setTextColor(color, ILI9341_BLACK);
+    tft.setTextSize(2);
+    tft.setCursor(0, 30);
+    tft.println(" " + relojPileta);
+
     tft.setTextSize(3);
     tft.getTextBounds((String)relojSerie, 0, 0, &xCronometro, &yCronometro, &wCronometro, &hCronometro);
     tft.setCursor(0, hContador);
