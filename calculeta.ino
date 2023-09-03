@@ -24,11 +24,11 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 Button boton(BOTON);
 
 boolean contando = false;
-boolean incrementaPileta = true;
+boolean sePuedeIncrementaPileta = true;
 
-unsigned long cronometroPiletas= 0;
-unsigned long cronometroSeries= 0;
-unsigned long cronometroTotal = 0;
+// unsigned long cronometroPileta= 0;
+// unsigned long cronometroSerie= 0;
+// unsigned long cronometroTotal = 0;
 
 int contadorPiletas = 0;
 int contadorSeries = 0;
@@ -48,9 +48,17 @@ typedef struct
 
 datos_serie series[20];
 
+typedef struct
+{
+  unsigned long pileta;
+  unsigned long serie;
+  unsigned long total;
+} cronometros;
+
+cronometros cronometro;
+
 // coordenadas y tamaños de las cosas impresas.
-int16_t xCronometro, yCronometro;
-uint16_t wContador, hContador, wMensajeMtsSerie, hMensajeMtsSerie, wCronometro, hCronometro;
+uint16_t hContador;
 
 void setup() {
   boton.begin();
@@ -81,12 +89,12 @@ void loop() {
     if (boton.pressed())
     {
       timestampBotonPresionado = millis(); 
-      if(incrementaPileta) // aumenta el numero de piletas
+      if(sePuedeIncrementaPileta) // aumenta el numero de piletas
       {
-        incrementaPileta = false; // 
+        sePuedeIncrementaPileta = false; // 
         contadorPiletas++;
         contadorTotal++;
-        cronometroPiletas = 0;
+        cronometro.pileta = 0;
       }
       else // aumenta el numero de series
       {
@@ -94,19 +102,38 @@ void loop() {
         {
           // almacena los valores en la estructura
           series[contadorSeries].piletas = contadorPiletas;
-          series[contadorSeries].tiempo = cronometroSeries;
+          series[contadorSeries].tiempo = cronometro.serie;
           contadorSeries++;
           // resetea las variables para la proxima cuenta.
           contadorPiletas = 0;
-          cronometroPiletas = 0;
-          cronometroSeries = 0;
+          cronometro.pileta = 0;
+          cronometro.serie = 0;
         }
       }
       imprimeSeries();
       imprimeMetros(ILI9341_GREEN, ILI9341_GREENYELLOW);
       imprimeContador(contadorPiletas, ILI9341_WHITE);
     }
-    imprimeCronometros(ILI9341_WHITE);
+
+    if (millis() - timestampUltimoCronometroImpreso >= unSegundo) //si pasó un segundo...
+    {
+      // incrementa los cronometros.
+      
+      cronometro.pileta++;
+      cronometro.serie++;
+      cronometro.total++;
+      // cronometroPileta++;
+      // cronometroSerie++;
+      // cronometroTotal++;
+      timestampUltimoCronometroImpreso = millis();
+      imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE);
+      imprimeCronometroSerie(cronometro.serie, ILI9341_WHITE);
+      imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
+      // imprimeCronometroPileta(cronometroPileta, ILI9341_WHITE);
+      // imprimeCronometroSerie(cronometroSerie, ILI9341_WHITE);
+      // imprimeCronometroTotal(cronometroTotal, ILI9341_WHITE);
+    }
+    // imprimeCronometros(ILI9341_WHITE);
     sePuedeIncrementarSerie();
 
     // RESET
@@ -114,8 +141,14 @@ void loop() {
       if (millis() - timestampBotonPresionado >= tiempoParaResetar) {
         timestampBotonPresionado = millis();
         contando = false;
-        cronometroSeries= 0;
-        cronometroTotal = 0;
+
+        cronometro.pileta= 0;
+        cronometro.serie= 0;
+        cronometro.total = 0;
+        // cronometroPileta= 0;
+        // cronometroSerie= 0;
+        // cronometroTotal = 0;
+
         contadorPiletas = 0;
         contadorTotal = 0;
 
@@ -136,40 +169,45 @@ void sePuedeIncrementarSerie()
 {
   if (millis() - timestampBotonPresionado >= tiempoParaIncrementarSerie)
   {
-    incrementaPileta = true;
+    sePuedeIncrementaPileta = true;
   }
 }
 
-void imprimeCronometros(uint16_t color)
+void imprimeCronometroTotal(unsigned long cronometro, uint16_t color)
 {
-  if (millis() - timestampUltimoCronometroImpreso >= unSegundo)
-  {
-    timestampUltimoCronometroImpreso = millis();
-    cronometroPiletas++;
-    cronometroSeries++;
-    cronometroTotal++;
+  int16_t x, y;
+  uint16_t w, h;
+  String reloj = creaReloj(cronometro);
 
-    String relojPileta = reloj(cronometroPiletas);
-    String relojSerie = reloj(cronometroSeries);
-    String relojTotal = reloj(cronometroTotal);
-
-    tft.setTextColor(color, ILI9341_BLACK);
-    tft.setTextSize(2);
-    tft.setCursor(0, 30);
-    tft.println(" " + relojPileta);
-
-    tft.setTextSize(3);
-    tft.getTextBounds((String)relojSerie, 0, 0, &xCronometro, &yCronometro, &wCronometro, &hCronometro);
-    tft.setCursor(0, hContador);
-    tft.write(0x0F); // sibolo del reloj
-    tft.println(" " + relojSerie);
-
-    tft.setCursor(0, ALTO_PANTALLA - hCronometro);
-    tft.println(" " + relojTotal);
-  }
+  tft.setTextColor(color, ILI9341_BLACK);
+  tft.setTextSize(3);
+  tft.getTextBounds((String)reloj, 0, 0, &x, &y, &w, &h);
+  tft.setCursor(0, ALTO_PANTALLA - h);
+  tft.println(" " + reloj);
 }
 
-String reloj(unsigned int tiempo)
+void imprimeCronometroSerie(unsigned long cronometro, uint16_t color)
+{
+  String reloj = creaReloj(cronometro);
+
+  tft.setTextColor(color, ILI9341_BLACK);
+  tft.setTextSize(3);
+  tft.setCursor(0, hContador);
+  tft.write(0x0F); // sibolo del reloj
+  tft.println(" " + reloj);
+}
+
+void imprimeCronometroPileta(unsigned long cronometro, uint16_t color)
+{
+  String reloj = creaReloj(cronometro);
+
+  tft.setTextColor(color, ILI9341_BLACK);
+  tft.setTextSize(2);
+  tft.setCursor(0, 40);
+  tft.println(reloj);
+}
+
+String creaReloj(unsigned long tiempo)
 {
     String segundos = String(tiempo % 60);
     segundos = segundos.length() == 1 ? "0" + segundos : segundos;
@@ -178,8 +216,10 @@ String reloj(unsigned int tiempo)
     minutos = minutos.length() == 1 ? "0" + minutos : minutos;
 
     String reloj = minutos + ":" + segundos;
+    return minutos + ":" + segundos;
+    // return minutos + ":" + segundos;
 
-    return reloj;
+    // return reloj;
 }
 
 void imprimeContador(int numero, uint16_t colorTexto)
@@ -258,7 +298,7 @@ void imprimeSeries()
     tft.print(count * piletas * LARGO_PILETA);
     tft.print("m ");
     tft.setTextColor(0x90D5, ILI9341_BLACK);
-    tft.print(reloj(totalTiempo));
+    tft.print(creaReloj(totalTiempo));
     tft.print(" ");
     tft.println();
     tft.setCursor(0, tft.getCursorY()+5);
