@@ -60,9 +60,8 @@ uint16_t hContador; // altura del contador para posicionar otras cosas
 void setup() {
   boton.begin();  // inicializa el boton
   tft.begin();    // inicializa la pantalla
-  tft.setRotation(0);
+  // tft.setRotation(0);
   tft.fillScreen(0x9E1E);
-  // tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);  
   tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
 }
 
@@ -131,27 +130,32 @@ void loop() {
 
     // RESET
     if(boton.released()) {
-      if (millis() - timestampBotonPresionado >= TIEMPO_PULSO_RESET) {
-        timestampBotonPresionado = millis();
-        contando = false;
-
-        cronometro.pileta= 0;
-        cronometro.serie= 0;
-        cronometro.total = 0;
-
-        contador.piletas = 0;
-        contador.total = 0;
-
-        for (int i = 0; i < 10; )
-        {
-          series[i].tiempo = 0;
-          series[i].piletas = 0;
-        }
-        
-        tft.fillScreen(ILI9341_WHITE);
-        tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, ILI9341_NAVY);
-      }
+        reset();
     }
+  }
+}
+
+void reset()
+{
+  if (millis() - timestampBotonPresionado >= TIEMPO_PULSO_RESET ) {
+    timestampBotonPresionado = millis();
+    contando = false;
+
+    cronometro.pileta= 0;
+    cronometro.serie= 0;
+    cronometro.total = 0;
+
+    contador.piletas = 0;
+    contador.total = 0;
+
+    for (int i = 0; i < 10; )
+    {
+      series[i].tiempo = 0;
+      series[i].piletas = 0;
+    }
+    
+    tft.fillScreen(0x9E1E);
+    tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
   }
 }
 
@@ -205,7 +209,6 @@ String creaReloj(unsigned long tiempo)
     String minutos = String((int)floor(tiempo / 60));
     minutos = minutos.length() == 1 ? "0" + minutos : minutos;
 
-    String reloj = minutos + ":" + segundos;
     return minutos + ":" + segundos;
 }
 
