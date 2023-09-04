@@ -128,7 +128,7 @@ void loop() {
       timestampUltimoCronometroImpreso = millis();
     }
 
-    sePuedeIncrementarPileta();
+    puedeIncrementarPileta = sePuedeIncrementarPileta();
 
     // RESET
     if(boton.released()) {
@@ -161,11 +161,15 @@ void reset()
   }
 }
 
-void sePuedeIncrementarPileta() // vuelve a poner en true cuando pasó el tiempo que tenia el usuario para incrementar una serie
+bool sePuedeIncrementarPileta() // vuelve a poner en true cuando pasó el tiempo que tenia el usuario para incrementar una serie
 {
   if (millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE)
   {
-    puedeIncrementarPileta = true;
+    return true;
+  }
+  else 
+  {
+    return false;
   }
 }
 
