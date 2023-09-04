@@ -75,7 +75,8 @@ void loop() {
       timestampBotonPresionado = millis();
       tft.fillScreen(ILI9341_BLACK);
       imprimeContador(0, ILI9341_WHITE);
-      imprimeMetros(ILI9341_GREEN, ILI9341_YELLOW);
+      imprimeMetrosSerie(ILI9341_GREEN);
+      imprimeMetrosTotales(ILI9341_GREEN);
       imprimeSeries();
     }
   }
@@ -107,7 +108,8 @@ void loop() {
         }
       }
       imprimeSeries();
-      imprimeMetros(ILI9341_GREEN, ILI9341_GREENYELLOW);
+      imprimeMetrosSerie(ILI9341_GREEN);
+      imprimeMetrosTotales(ILI9341_GREEN);
       imprimeContador(contador.piletas, ILI9341_WHITE);
       imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE);
     }
@@ -229,22 +231,28 @@ void imprimeContador(int numero, uint16_t colorTexto)
   hContador = h;
 }
 
-void imprimeMetros(uint16_t colorSerie, uint16_t colorTotal)
+void imprimeMetrosSerie(uint16_t color)
 {
   int16_t x, y;
   uint16_t w, h;
   String mtsSerie = "  " + String(contador.piletas * LARGO_PILETA) + "m";
-  String mtsTotal = String(contador.total * LARGO_PILETA) + "m";
 
   tft.setTextSize(3);
   tft.getTextBounds((String)mtsSerie, 0, 0, &x, &y, &w, &h);
-  tft.setTextColor(colorSerie, ILI9341_BLACK);
+  tft.setTextColor(color, ILI9341_BLACK);
   tft.setCursor(ANCHO_PANTALLA - w, hContador);
   tft.print(mtsSerie);
+}
+
+void imprimeMetrosTotales(uint16_t color)
+{
+  int16_t x, y;
+  uint16_t w, h;
+  String mtsTotal = String(contador.total * LARGO_PILETA) + "m";
 
   tft.setTextSize(4);
   tft.getTextBounds((String)mtsTotal, 0, 0, &x, &y, &w, &h);
-  tft.setTextColor(colorTotal, ILI9341_BLACK);
+  tft.setTextColor(color, ILI9341_BLACK);
   tft.setCursor(ANCHO_PANTALLA - w, ALTO_PANTALLA - h);
   tft.print(mtsTotal);
 }
