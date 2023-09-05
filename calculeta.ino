@@ -20,7 +20,8 @@
 #define LARGO_PILETA    50
 #define UN_SEGUNDO      1000
 #define TIEMPO_INCREMENTO_SERIE 3000
-#define TIEMPO_PULSO_RESET      5000
+#define TIEMPO_PULSO_RESET      3000
+#define RENGLONES_SERIE         7
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
@@ -37,7 +38,7 @@ typedef struct
   int piletas;
   int tiempo;
 } datos_serie;
-datos_serie series[20];
+datos_serie series[RENGLONES_SERIE];
 
 typedef struct
 {
@@ -120,7 +121,7 @@ void loop() {
       cronometro.pileta++;
       cronometro.serie++;
       cronometro.total++;
-      // imprime los cronometros
+      // actualiza los cronometros
       imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE);
       imprimeCronometroSerie(cronometro.serie, ILI9341_WHITE);
       imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
@@ -150,7 +151,7 @@ void reset()
     contador.piletas = 0;
     contador.total = 0;
 
-    for (int i = 0; i < 10; )
+    for (int i = 0; i < RENGLONES_SERIE; i++)
     {
       series[i].tiempo = 0;
       series[i].piletas = 0;
@@ -269,7 +270,7 @@ void imprimeSeries()
   std::map<int, std::pair<int, int>> counts;  // Declare a map named 'counts'
 
   // Count occurrences of each unique 'piletas' value and store associated 'tiempo'
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < RENGLONES_SERIE; ++i) {
     if (series[i].piletas == 0) continue;
     int piletas = series[i].piletas;
     int tiempo = series[i].tiempo;
