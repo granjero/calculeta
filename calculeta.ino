@@ -19,7 +19,7 @@
 // algunas cosntantes
 #define LARGO_PILETA    50
 #define UN_SEGUNDO      1000
-#define TIEMPO_INCREMENTO_SERIE 3000
+#define TIEMPO_INCREMENTO_SERIE 15000
 #define TIEMPO_PULSO_RESET      3000
 #define RENGLONES_SERIE         7
 
@@ -83,6 +83,22 @@ void loop() {
   }
   else // comenzó a funcionar el aparato
   {
+    if (millis() - timestampUltimoCronometroImpreso >= UN_SEGUNDO) //si pasó un segundo...
+    {
+      // incrementa los cronometros
+      cronometro.pileta++;
+      cronometro.serie++;
+      cronometro.total++;
+      // actualiza los cronometros en la pantalla
+      imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, puedeIncrementarPileta);
+      imprimeCronometroSerie(cronometro.serie, ILI9341_WHITE);
+      imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
+      // toma el tiempo en el que se imprimieron los cronometros
+      timestampUltimoCronometroImpreso = millis();
+
+      // imprimeMensajeIncrementarSerie(!puedeIncrementarPileta);
+    }
+
     if (boton.pressed())
     {
       timestampBotonPresionado = millis(); 
@@ -112,29 +128,16 @@ void loop() {
       imprimeMetrosSerie(ILI9341_GREEN);
       imprimeMetrosTotales(ILI9341_GREEN);
       imprimeContador(contador.piletas, ILI9341_WHITE);
-      imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE);
+      imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, true);
     }
 
-    if (millis() - timestampUltimoCronometroImpreso >= UN_SEGUNDO) //si pasó un segundo...
-    {
-      // incrementa los cronometros
-      cronometro.pileta++;
-      cronometro.serie++;
-      cronometro.total++;
-      // actualiza los cronometros
-      imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE);
-      imprimeCronometroSerie(cronometro.serie, ILI9341_WHITE);
-      imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
-      // toma el tiempo en el que se imprimieron los cronometros
-      timestampUltimoCronometroImpreso = millis();
+    if(boton.released()) {
+      //RESET
+      reset();
     }
 
     puedeIncrementarPileta = sePuedeIncrementarPileta();
 
-    // RESET
-    if(boton.released()) {
-        reset();
-    }
   }
 }
 
@@ -157,6 +160,14 @@ void reset()
       series[i].piletas = 0;
     }
     
+    for (int y = 0; y < ALTO_PANTALLA; y++)
+    {
+      for (int x = 0; x < ANCHO_PANTALLA; x++)
+      {
+        tft.drawPixel(x,y, random(0, 65536));
+      }
+    }
+    delay(500);
     tft.fillScreen(0x9E1E);
     tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
   }
@@ -172,6 +183,23 @@ bool sePuedeIncrementarPileta() // vuelve a poner en true cuando pasó el tiempo
   {
     return false;
   }
+}
+
+void imprimeMensajeIncrementarSerie(bool imprime)
+{
+  tft.setTextSize(2);
+  tft.setCursor(0,40);
+  if (imprime)
+  {
+    tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
+  }
+  else
+  {
+    tft.setTextColor(ILI9341_BLACK, ILI9341_BLACK);
+  }
+  tft.write(0x15); 
+  tft.print(" ");
+  tft.write(0x18); 
 }
 
 void imprimeCronometroTotal(unsigned long cronometro, uint16_t color)
@@ -198,13 +226,13 @@ void imprimeCronometroSerie(unsigned long cronometro, uint16_t color)
   tft.println(" " + reloj);
 }
 
-void imprimeCronometroPileta(unsigned long cronometro, uint16_t color)
+void imprimeCronometroPileta(unsigned long cronometro, uint16_t color, bool ventanaSerie)
 {
   String reloj = creaReloj(cronometro);
-
-  tft.setTextColor(color, ILI9341_BLACK);
-  tft.setTextSize(2);
-  tft.setCursor(0, 45);
+  if(contador.piletas == 10) tft.fillRect(0, 0, 60, 60, ILI9341_BLACK);
+  tft.setTextColor((contador.piletas != 0) ? ((ventanaSerie) ? color : 0xFB54) : color, ILI9341_BLACK);
+  tft.setTextSize(contador.piletas >= 10 ? 2 : 3);
+  tft.setCursor(0, 0);
   tft.println(reloj);
 }
 
@@ -224,7 +252,7 @@ void imprimeContador(int numero, uint16_t colorTexto)
   int16_t x, y;
   uint16_t w, h;
 
-  String mensaje = numero < 10 ? " " + (String)numero : (String)numero;
+  String mensaje = numero == 0 ? " " + (String)numero : (String)numero;
   tft.setTextWrap(false);
   tft.setTextSize(15);
   tft.setCursor(0,0);
