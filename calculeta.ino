@@ -159,15 +159,14 @@ void reset()
       series[i].tiempo = 0;
       series[i].piletas = 0;
     }
-    
-    for (int y = 0; y < ALTO_PANTALLA; y++)
-    {
-      for (int x = 0; x < ANCHO_PANTALLA; x++)
-      {
-        tft.drawPixel(x,y, random(0, 65536));
-      }
-    }
-    delay(500);
+    // for (int y = 0; y < ALTO_PANTALLA; y++)
+    // {
+    //   for (int x = 0; x < ANCHO_PANTALLA; x++)
+    //   {
+    //     tft.drawPixel(x,y, random(0, 65536));
+    //   }
+    // }
+    // delay(500);
     tft.fillScreen(0x9E1E);
     tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
   }
