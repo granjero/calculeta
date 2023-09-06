@@ -228,7 +228,7 @@ void imprimeCronometroSerie(unsigned long cronometro, uint16_t color)
 void imprimeCronometroPileta(unsigned long cronometro, uint16_t color, bool ventanaSerie)
 {
   String reloj = creaReloj(cronometro);
-  if(contador.piletas == 10) tft.fillRect(0, 0, 60, 60, ILI9341_BLACK);
+  if (contador.piletas == 10) tft.fillRect(0, 0, 60, 60, ILI9341_BLACK);
   tft.setTextColor((contador.piletas != 0) ? ((ventanaSerie) ? color : 0xFB54) : color, ILI9341_BLACK);
   tft.setTextSize(contador.piletas >= 10 ? 2 : 3);
   tft.setCursor(0, 0);
