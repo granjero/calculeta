@@ -19,7 +19,7 @@
 // algunas cosntantes
 #define LARGO_PILETA    50
 #define UN_SEGUNDO      1000
-#define TIEMPO_INCREMENTO_SERIE 15000
+#define TIEMPO_INCREMENTO_SERIE 10000 // 10 segundos
 #define TIEMPO_PULSO_RESET      3000
 #define RENGLONES_SERIE         7
 
@@ -28,6 +28,7 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 Button boton(BOTON);
 
 boolean contando = false;
+boolean descansando = false;
 boolean puedeIncrementarPileta = true;
 
 unsigned long timestampUltimoCronometroImpreso = 0;
@@ -75,7 +76,7 @@ void loop() {
       contando = true;
       timestampBotonPresionado = millis();
       tft.fillScreen(ILI9341_BLACK);
-      imprimeContador(0, ILI9341_WHITE);
+      imprimeContador("0", ILI9341_WHITE);
       imprimeMetrosSerie(ILI9341_GREEN);
       imprimeMetrosTotales(ILI9341_GREEN);
       imprimeSeries();
@@ -87,8 +88,10 @@ void loop() {
     {
       // incrementa los cronometros
       cronometro.pileta++;
-      cronometro.serie++;
+      if (!descansando) cronometro.serie++;
       cronometro.total++;
+      // actualiza el contador para que titile mientras espera
+      if (descansando) imprimeContador("0", 0);
       // actualiza los cronometros en la pantalla
       imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, puedeIncrementarPileta);
       imprimeCronometroSerie(cronometro.serie, ILI9341_WHITE);
@@ -102,33 +105,44 @@ void loop() {
     if (boton.pressed())
     {
       timestampBotonPresionado = millis(); 
-      if(puedeIncrementarPileta) // aumenta el numero de piletas
+      if (!descansando)
       {
-        puedeIncrementarPileta = false; // pone en falso para que se pueda incrementar la serie
-        contador.piletas++;
-        contador.total++;
-        cronometro.pileta = 0;
-      }
-      else // aumenta el numero de series
-      {
-        if (contador.piletas != 0) // no tiene sentido una serie de 0 piletas 
+        if(puedeIncrementarPileta) // aumenta el numero de piletas
         {
-          // almacena los valores en la estructura
-          series[contador.series].piletas = contador.piletas;
-          series[contador.series].tiempo = cronometro.serie;
-          // incrementa el valor de series
-          contador.series++;
-          // resetea las variables para la proxima cuenta.
-          contador.piletas = 0;
+          puedeIncrementarPileta = false; // pone en falso para que se pueda incrementar la serie
+          contador.piletas++;
+          contador.total++;
           cronometro.pileta = 0;
-          cronometro.serie = 0;
         }
+        else // aumenta el numero de series
+        {
+          if (contador.piletas != 0) // no tiene sentido una serie de 0 piletas 
+          {
+            // almacena los valores en la estructura
+            series[contador.series].piletas = contador.piletas;
+            series[contador.series].tiempo = cronometro.serie;
+            // incrementa el valor de series
+            contador.series++;
+            // resetea las variables para la proxima cuenta.
+            contador.piletas = 0;
+            cronometro.pileta = 0;
+            cronometro.serie = 0;
+            descansando = true;
+          }
+        }
+        imprimeSeries();
+        imprimeMetrosSerie(ILI9341_GREEN);
+        imprimeMetrosTotales(ILI9341_GREEN);
+        imprimeContador((String)contador.piletas, ILI9341_WHITE);
+        imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, true);
       }
-      imprimeSeries();
-      imprimeMetrosSerie(ILI9341_GREEN);
-      imprimeMetrosTotales(ILI9341_GREEN);
-      imprimeContador(contador.piletas, ILI9341_WHITE);
-      imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, true);
+
+      else // descansando = true
+      {
+        descansando = false;
+        cronometro.pileta = 0;
+        imprimeContador("0", ILI9341_WHITE);
+      }
     }
 
     if(boton.released()) {
@@ -246,19 +260,21 @@ String creaReloj(unsigned long tiempo)
     return minutos + ":" + segundos;
 }
 
-void imprimeContador(int numero, uint16_t colorTexto)
+void imprimeContador(String numero, uint16_t colorTexto)
 {
   int16_t x, y;
   uint16_t w, h;
 
-  String mensaje = numero == 0 ? " " + (String)numero : (String)numero;
+  // String mensaje = numero == "0" ? " " + numero : numero;
   tft.setTextWrap(false);
   tft.setTextSize(15);
-  tft.setCursor(0,0);
-  tft.setTextColor(colorTexto, ILI9341_BLACK);
-  tft.getTextBounds((String)mensaje, 0, 0, &x, &y, &w, &h);
+  tft.getTextBounds(numero, 0, 0, &x, &y, &w, &h);
   tft.setCursor(ANCHO_PANTALLA - w, 0);
-  tft.print(mensaje);
+  if (descansando)
+    tft.setTextColor(cronometro.pileta % 2 == 0 ? ILI9341_ORANGE : ILI9341_BLACK, ILI9341_BLACK);
+  else
+    tft.setTextColor(colorTexto, ILI9341_BLACK);
+  tft.print(numero);
   
   hContador = h;
 }
