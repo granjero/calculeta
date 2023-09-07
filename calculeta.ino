@@ -62,7 +62,6 @@ uint16_t hContador; // altura del contador para posicionar otras cosas
 void setup() {
   boton.begin();  // inicializa el boton
   tft.begin();    // inicializa la pantalla
-  // tft.setRotation(0);
   tft.fillScreen(0x9E1E);
   tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
 }
@@ -98,8 +97,6 @@ void loop() {
       imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
       // toma el tiempo en el que se imprimieron los cronometros
       timestampUltimoCronometroImpreso = millis();
-
-      // imprimeMensajeIncrementarSerie(!puedeIncrementarPileta);
     }
 
     if (boton.pressed())
@@ -173,14 +170,6 @@ void reset()
       series[i].tiempo = 0;
       series[i].piletas = 0;
     }
-    // for (int y = 0; y < ALTO_PANTALLA; y++)
-    // {
-    //   for (int x = 0; x < ANCHO_PANTALLA; x++)
-    //   {
-    //     tft.drawPixel(x,y, random(0, 65536));
-    //   }
-    // }
-    // delay(500);
     tft.fillScreen(0x9E1E);
     tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
   }
@@ -223,7 +212,7 @@ void imprimeCronometroTotal(unsigned long cronometro, uint16_t color)
 
   tft.setTextColor(color, ILI9341_BLACK);
   tft.setTextSize(3);
-  tft.getTextBounds((String)reloj, 0, 0, &x, &y, &w, &h);
+  tft.getTextBounds(reloj, 0, 0, &x, &y, &w, &h);
   tft.setCursor(0, ALTO_PANTALLA - h);
   tft.println(" " + reloj);
 }
@@ -243,7 +232,10 @@ void imprimeCronometroPileta(unsigned long cronometro, uint16_t color, bool vent
 {
   String reloj = creaReloj(cronometro);
   if (contador.piletas == 10) tft.fillRect(0, 0, 60, 60, ILI9341_BLACK);
-  tft.setTextColor((contador.piletas != 0) ? ((ventanaSerie) ? color : 0xFB54) : color, ILI9341_BLACK);
+  if (!descansando)
+    tft.setTextColor((contador.piletas != 0) ? ((ventanaSerie) ? color : 0xFB54) : color, ILI9341_BLACK);
+  else
+    tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
   tft.setTextSize(contador.piletas >= 10 ? 2 : 3);
   tft.setCursor(0, 0);
   tft.println(reloj);
@@ -265,7 +257,6 @@ void imprimeContador(String numero, uint16_t colorTexto)
   int16_t x, y;
   uint16_t w, h;
 
-  // String mensaje = numero == "0" ? " " + numero : numero;
   tft.setTextWrap(false);
   tft.setTextSize(15);
   tft.getTextBounds(numero, 0, 0, &x, &y, &w, &h);
@@ -286,7 +277,7 @@ void imprimeMetrosSerie(uint16_t color)
   String mtsSerie = "  " + String(contador.piletas * LARGO_PILETA) + "m";
 
   tft.setTextSize(3);
-  tft.getTextBounds((String)mtsSerie, 0, 0, &x, &y, &w, &h);
+  tft.getTextBounds(mtsSerie, 0, 0, &x, &y, &w, &h);
   tft.setTextColor(color, ILI9341_BLACK);
   tft.setCursor(ANCHO_PANTALLA - w, hContador);
   tft.print(mtsSerie);
@@ -299,7 +290,7 @@ void imprimeMetrosTotales(uint16_t color)
   String mtsTotal = String(contador.total * LARGO_PILETA) + "m";
 
   tft.setTextSize(4);
-  tft.getTextBounds((String)mtsTotal, 0, 0, &x, &y, &w, &h);
+  tft.getTextBounds(mtsTotal, 0, 0, &x, &y, &w, &h);
   tft.setTextColor(color, ILI9341_BLACK);
   tft.setCursor(ANCHO_PANTALLA - w, ALTO_PANTALLA - h);
   tft.print(mtsTotal);
