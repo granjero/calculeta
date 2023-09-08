@@ -87,18 +87,15 @@ void loop() {
   {
     if (millis() - timestampUltimoCronometroImpreso >= UN_SEGUNDO) //si pasó un segundo...
     {
-      // incrementa los cronometros
       cronometro.pileta++;
+      cronometro.total++;
       if (!descansando) cronometro.serie++;
       if (descansando) cronometro.descanso++;
-      cronometro.total++;
-      // actualiza el contador para que titile mientras espera
+
       if (descansando) imprimeCronometroDescanso(cronometro.descanso, ILI9341_ORANGE);
-      // actualiza los cronometros en la pantalla
       if (!descansando) imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, puedeIncrementarPileta);
       imprimeCronometroSerie(cronometro.serie, ILI9341_WHITE);
       imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
-      // toma el tiempo en el que se imprimieron los cronometros
       timestampUltimoCronometroImpreso = millis();
     }
 
@@ -133,6 +130,7 @@ void loop() {
             tft.fillRect(0, 0, 240, 120, ILI9341_BLACK);
           }
         }
+
         imprimeSeries();
         imprimeMetrosSerie(ILI9341_GREEN);
         imprimeMetrosTotales(ILI9341_GREEN);
@@ -184,14 +182,7 @@ void reset()
 
 bool sePuedeIncrementarPileta() // vuelve a poner en true cuando pasó el tiempo que tenia el usuario para incrementar una serie
 {
-  if (millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE)
-  {
-    return true;
-  }
-  else 
-  {
-    return false;
-  }
+  return millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE;
 }
 
 void imprimeMensajeIncrementarSerie(bool imprime)
