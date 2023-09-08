@@ -45,6 +45,7 @@ typedef struct
 {
   unsigned long pileta;
   unsigned long serie;
+  unsigned long descanso;
   unsigned long total;
 } cronometros;
 cronometros cronometro;
@@ -75,12 +76,13 @@ void loop() {
       contando = true;
       timestampBotonPresionado = millis();
       tft.fillScreen(ILI9341_BLACK);
-      imprimeContador("0", ILI9341_WHITE);
+      imprimeContador((String)contador.piletas, ILI9341_WHITE);
       imprimeMetrosSerie(ILI9341_GREEN);
       imprimeMetrosTotales(ILI9341_GREEN);
       imprimeSeries();
     }
   }
+
   else // comenzó a funcionar el aparato
   {
     if (millis() - timestampUltimoCronometroImpreso >= UN_SEGUNDO) //si pasó un segundo...
@@ -88,11 +90,12 @@ void loop() {
       // incrementa los cronometros
       cronometro.pileta++;
       if (!descansando) cronometro.serie++;
+      if (descansando) cronometro.descanso++;
       cronometro.total++;
       // actualiza el contador para que titile mientras espera
-      if (descansando) imprimeContador("0", 0);
+      if (descansando) imprimeCronometroDescanso(cronometro.descanso, ILI9341_ORANGE);
       // actualiza los cronometros en la pantalla
-      imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, puedeIncrementarPileta);
+      if (!descansando) imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, puedeIncrementarPileta);
       imprimeCronometroSerie(cronometro.serie, ILI9341_WHITE);
       imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
       // toma el tiempo en el que se imprimieron los cronometros
@@ -102,6 +105,7 @@ void loop() {
     if (boton.pressed())
     {
       timestampBotonPresionado = millis(); 
+
       if (!descansando)
       {
         if(puedeIncrementarPileta) // aumenta el numero de piletas
@@ -124,21 +128,24 @@ void loop() {
             contador.piletas = 0;
             cronometro.pileta = 0;
             cronometro.serie = 0;
+            cronometro.descanso = 0;
             descansando = true;
+            tft.fillRect(0, 0, 240, 120, ILI9341_BLACK);
           }
         }
         imprimeSeries();
         imprimeMetrosSerie(ILI9341_GREEN);
         imprimeMetrosTotales(ILI9341_GREEN);
-        imprimeContador((String)contador.piletas, ILI9341_WHITE);
-        imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, true);
+        if (!descansando) imprimeContador((String)contador.piletas, ILI9341_WHITE);
+        if (!descansando) imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, true);
       }
 
       else // descansando = true
       {
         descansando = false;
         cronometro.pileta = 0;
-        imprimeContador("0", ILI9341_WHITE);
+        tft.fillRect(0, 0, 240, 120, ILI9341_BLACK);
+        imprimeContador((String)contador.piletas, ILI9341_WHITE);
       }
     }
 
@@ -228,6 +235,16 @@ void imprimeCronometroSerie(unsigned long cronometro, uint16_t color)
   tft.println(" " + reloj);
 }
 
+void imprimeCronometroDescanso(unsigned long cronometro, uint16_t color)
+{
+  String reloj = creaReloj(cronometro);
+
+  tft.setTextColor(color, ILI9341_BLACK);
+  tft.setTextSize(8);
+  tft.setCursor(0, 25);
+  tft.println(reloj);
+}
+
 void imprimeCronometroPileta(unsigned long cronometro, uint16_t color, bool ventanaSerie)
 {
   String reloj = creaReloj(cronometro);
@@ -261,10 +278,7 @@ void imprimeContador(String numero, uint16_t colorTexto)
   tft.setTextSize(15);
   tft.getTextBounds(numero, 0, 0, &x, &y, &w, &h);
   tft.setCursor(ANCHO_PANTALLA - w, 0);
-  if (descansando)
-    tft.setTextColor(cronometro.pileta % 2 == 0 ? ILI9341_ORANGE : ILI9341_BLACK, ILI9341_BLACK);
-  else
-    tft.setTextColor(colorTexto, ILI9341_BLACK);
+  tft.setTextColor(colorTexto, ILI9341_BLACK);
   tft.print(numero);
   
   hContador = h;
