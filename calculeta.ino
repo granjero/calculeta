@@ -43,24 +43,25 @@ datos_serie series[RENGLONES_SERIE];
 
 typedef struct
 {
-  unsigned long pileta;
-  unsigned long serie;
-  unsigned long descanso;
-  unsigned long total;
+  unsigned int pileta;
+  unsigned int serie;
+  unsigned int descanso;
+  unsigned int total;
 } cronometros;
 cronometros cronometro;
 
 typedef struct
 {
-  unsigned long piletas;
-  unsigned long series;
-  unsigned long total;
+  unsigned int piletas;
+  unsigned int series;
+  unsigned int total;
 } contadores;
 contadores contador;
 
-uint16_t hContador; // altura del contador para posicionar otras cosas
+int hContador; // altura del contador para posicionar otras cosas
 
 void setup() {
+  Serial.begin(115200);
   boton.begin();  // inicializa el boton
   tft.begin();    // inicializa la pantalla
   tft.fillScreen(0x9E1E);
@@ -76,7 +77,7 @@ void loop() {
       contando = true;
       timestampBotonPresionado = millis();
       tft.fillScreen(ILI9341_BLACK);
-      imprimeContador((String)contador.piletas, ILI9341_WHITE);
+      imprimeContador(contador.piletas, ILI9341_WHITE);
       imprimeMetrosSerie(ILI9341_GREEN);
       imprimeMetrosTotales(ILI9341_GREEN);
       imprimeSeries();
@@ -127,14 +128,14 @@ void loop() {
             cronometro.serie = 0;
             cronometro.descanso = 0;
             descansando = true;
-            tft.fillRect(0, 0, 240, 120, ILI9341_BLACK);
+            tft.fillRect(0, 0, 240, 145, ILI9341_BLACK);
           }
         }
 
         imprimeSeries();
         imprimeMetrosSerie(ILI9341_GREEN);
         imprimeMetrosTotales(ILI9341_GREEN);
-        if (!descansando) imprimeContador((String)contador.piletas, ILI9341_WHITE);
+        if (!descansando) imprimeContador(contador.piletas, ILI9341_WHITE);
         if (!descansando) imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, true);
       }
 
@@ -143,7 +144,7 @@ void loop() {
         descansando = false;
         cronometro.pileta = 0;
         tft.fillRect(0, 0, 240, 120, ILI9341_BLACK);
-        imprimeContador((String)contador.piletas, ILI9341_WHITE);
+        imprimeContador(contador.piletas, ILI9341_WHITE);
       }
     }
 
@@ -185,50 +186,38 @@ bool sePuedeIncrementarPileta() // vuelve a poner en true cuando pasó el tiempo
   return millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE;
 }
 
-void imprimeMensajeIncrementarSerie(bool imprime)
-{
-  tft.setTextSize(2);
-  tft.setCursor(0,40);
-  if (imprime)
-  {
-    tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
-  }
-  else
-  {
-    tft.setTextColor(ILI9341_BLACK, ILI9341_BLACK);
-  }
-  tft.write(0x15); 
-  tft.print(" ");
-  tft.write(0x18); 
-}
-
-void imprimeCronometroTotal(unsigned long cronometro, uint16_t color)
+void imprimeCronometroTotal(unsigned int cronometro, uint16_t color)
 {
   int16_t x, y;
   uint16_t w, h;
-  String reloj = creaReloj(cronometro);
+  char reloj[6];
+  creaRelojGPT(cronometro, reloj, sizeof(reloj));
 
   tft.setTextColor(color, ILI9341_BLACK);
   tft.setTextSize(3);
   tft.getTextBounds(reloj, 0, 0, &x, &y, &w, &h);
   tft.setCursor(0, ALTO_PANTALLA - h);
-  tft.println(" " + reloj);
+  tft.print(" ");
+  tft.println(reloj);
 }
 
-void imprimeCronometroSerie(unsigned long cronometro, uint16_t color)
+void imprimeCronometroSerie(unsigned int cronometro, uint16_t color)
 {
-  String reloj = creaReloj(cronometro);
+  char reloj[6];
+  creaRelojGPT(cronometro, reloj, sizeof(reloj));
 
   tft.setTextColor(color, ILI9341_BLACK);
   tft.setTextSize(3);
   tft.setCursor(0, hContador);
   tft.write(0x0F); // sibolo del reloj
-  tft.println(" " + reloj);
+  tft.print(" ");
+  tft.println(reloj);
 }
 
-void imprimeCronometroDescanso(unsigned long cronometro, uint16_t color)
+void imprimeCronometroDescanso(unsigned int cronometro, uint16_t color)
 {
-  String reloj = creaReloj(cronometro);
+  char reloj[6];
+  creaRelojGPT(cronometro, reloj, sizeof(reloj));
 
   tft.setTextColor(color, ILI9341_BLACK);
   tft.setTextSize(8);
@@ -238,7 +227,9 @@ void imprimeCronometroDescanso(unsigned long cronometro, uint16_t color)
 
 void imprimeCronometroPileta(unsigned long cronometro, uint16_t color, bool ventanaSerie)
 {
-  String reloj = creaReloj(cronometro);
+  char reloj[6];
+  creaRelojGPT(cronometro, reloj, sizeof(reloj));
+
   if (contador.piletas == 10) tft.fillRect(0, 0, 60, 60, ILI9341_BLACK);
   if (!descansando)
     tft.setTextColor((contador.piletas != 0) ? ((ventanaSerie) ? color : 0xFB54) : color, ILI9341_BLACK);
@@ -249,28 +240,32 @@ void imprimeCronometroPileta(unsigned long cronometro, uint16_t color, bool vent
   tft.println(reloj);
 }
 
-String creaReloj(unsigned long tiempo)
+void creaRelojGPT(unsigned int tiempo, char* buffer, size_t bufferSize)
 {
-    String segundos = String(tiempo % 60);
-    segundos = segundos.length() == 1 ? "0" + segundos : segundos;
+  unsigned int segundos = tiempo % 60;
+  unsigned int minutos = tiempo / 60;
 
-    String minutos = String((int)floor(tiempo / 60));
-    minutos = minutos.length() == 1 ? "0" + minutos : minutos;
-
-    return minutos + ":" + segundos;
+  snprintf(buffer, bufferSize, "%02lu:%02lu", minutos, segundos);
 }
 
-void imprimeContador(String numero, uint16_t colorTexto)
+void imprimeContador(unsigned int numero, uint16_t color)
 {
   int16_t x, y;
   uint16_t w, h;
 
+  char contador[3];
+  sprintf(contador, "%u", numero);
+
+  Serial.println(numero);
+  Serial.println(contador);
+  Serial.println(F("*****"));
+
   tft.setTextWrap(false);
   tft.setTextSize(15);
-  tft.getTextBounds(numero, 0, 0, &x, &y, &w, &h);
+  tft.getTextBounds(contador, 0, 0, &x, &y, &w, &h);
   tft.setCursor(ANCHO_PANTALLA - w, 0);
-  tft.setTextColor(colorTexto, ILI9341_BLACK);
-  tft.print(numero);
+  tft.setTextColor(color, ILI9341_BLACK);
+  tft.print(contador);
   
   hContador = h;
 }
@@ -279,26 +274,29 @@ void imprimeMetrosSerie(uint16_t color)
 {
   int16_t x, y;
   uint16_t w, h;
-  String mtsSerie = "  " + String(contador.piletas * LARGO_PILETA) + "m";
+
+  char mts[5];
+  snprintf(mts, sizeof(mts), "%lum", contador.piletas * LARGO_PILETA);
 
   tft.setTextSize(3);
-  tft.getTextBounds(mtsSerie, 0, 0, &x, &y, &w, &h);
+  tft.getTextBounds(mts, 0, 0, &x, &y, &w, &h);
   tft.setTextColor(color, ILI9341_BLACK);
   tft.setCursor(ANCHO_PANTALLA - w, hContador);
-  tft.print(mtsSerie);
+  tft.print(mts);
 }
 
 void imprimeMetrosTotales(uint16_t color)
 {
   int16_t x, y;
   uint16_t w, h;
-  String mtsTotal = String(contador.total * LARGO_PILETA) + "m";
+  char mts[5];
+  snprintf(mts, sizeof(mts), "%lum", contador.total * LARGO_PILETA);
 
   tft.setTextSize(4);
-  tft.getTextBounds(mtsTotal, 0, 0, &x, &y, &w, &h);
+  tft.getTextBounds(mts, 0, 0, &x, &y, &w, &h);
   tft.setTextColor(color, ILI9341_BLACK);
   tft.setCursor(ANCHO_PANTALLA - w, ALTO_PANTALLA - h);
-  tft.print(mtsTotal);
+  tft.print(mts);
 }
 
 void imprimeSeries()
@@ -329,19 +327,22 @@ void imprimeSeries()
     int count = entry.second.first;
     int totalTiempo = entry.second.second;
 
+    char reloj[6];
+    creaRelojGPT(totalTiempo, reloj, sizeof(reloj));
+
     tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
     tft.print(count);
     tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
-    tft.print("x ");
+    tft.print(F("x "));
     tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
     tft.print(piletas);
-    tft.print(" ");
+    tft.print(F(" "));
     tft.setTextColor(ILI9341_GREENYELLOW, ILI9341_BLACK);
     tft.print(count * piletas * LARGO_PILETA);
-    tft.print("m ");
+    tft.print(F("m "));
     tft.setTextColor(0x90D5, ILI9341_BLACK);
-    tft.print(creaReloj(totalTiempo));
-    tft.print(" ");
+    tft.print(reloj);
+    tft.print(F(" "));
     tft.println();
     tft.setCursor(0, tft.getCursorY()+5);
   }
