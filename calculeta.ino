@@ -303,7 +303,7 @@ void imprimeSeries()
   std::map<int, std::pair<int, int>> counts;  // Declare a map named 'counts'
 
   // Count occurrences of each unique 'piletas' value and store associated 'tiempo'
-  for (int i = 0; i < 7; ++i) {
+  for (int i = 0; i < CANT_MAX_SERIES; ++i) {
     if (series[i].piletas == 0) continue;
     int piletas = series[i].piletas;
     int tiempo = series[i].tiempo;
