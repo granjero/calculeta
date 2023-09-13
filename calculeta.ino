@@ -67,23 +67,36 @@ void setup()
 {
   boton.begin();  // inicializa el boton
   tft.begin();    // inicializa la pantalla
-  tft.fillScreen(0x9E1E);
-  tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
+  // tft.fillScreen(0x9E1E);
+  // tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
+  reset();
 }
 
 void loop() 
 {
   if (!contando) // no estamos contando
   {
-    if (boton.pressed())
+    if (series[0].piletas != 0)
     {
-      contando = true;
-      timestampBotonPresionado = millis();
-      tft.fillScreen(ILI9341_BLACK);
-      imprimeContador(contador.piletas, ILI9341_WHITE, TAM_FUENTE_CONTADOR);
-      imprimeMetrosSerie(ILI9341_GREEN);
-      imprimeMetrosTotales(ILI9341_GREEN);
+      imprimeResumen(false);
+      if (boton.pressed())
+      {
+        reset();
+      }
     }
+    else
+    {
+      if (boton.pressed())
+      {
+        contando = true;
+        timestampBotonPresionado = millis();
+        tft.fillScreen(ILI9341_BLACK);
+        imprimeContador(contador.piletas, ILI9341_WHITE, TAM_FUENTE_CONTADOR);
+        imprimeMetrosSerie(ILI9341_GREEN);
+        imprimeMetrosTotales(ILI9341_GREEN);
+      }
+    }
+    
   }
 
   else // comenzó a funcionar el aparato
@@ -154,7 +167,8 @@ void loop()
 
     if(boton.released() && millis() - timestampBotonPresionado >= TIEMPO_PULSO_RESET) {
       //RESET
-      reset();
+      // reset();
+      imprimeResumen(true);
     }
 
     puedeIncrementarPileta = sePuedeIncrementarPileta();
@@ -343,4 +357,38 @@ void imprimeSeries()
     tft.setCursor(0, tft.getCursorY()+5);
   }
 
+}
+void imprimeResumen(bool imprime)
+{
+  
+  char reloj[6];
+  if (!imprime) return;
+
+  contando = false;
+  tft.fillScreen(ILI9341_BLACK);
+  tft.setCursor(0, 0);
+  tft.setTextSize(3);
+  tft.println(F("Resumen"));
+  tft.setCursor(0, tft.getCursorY()+10);
+  tft.setTextSize(2);
+  for (int i = 0; i < CANT_MAX_SERIES; ++i)
+  {
+    creaRelojGPT(series[i].tiempo, reloj, sizeof(reloj));
+    if (series[i].piletas == 0) continue;
+    tft.setTextColor(ILI9341_CYAN, ILI9341_BLACK);
+    // tft.print(i);
+    tft.write(0x10); // sibolo del reloj
+    tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
+    tft.print(F(" "));
+    tft.print(series[i].piletas);
+    tft.print(F(" "));
+    tft.setTextColor(ILI9341_GREENYELLOW, ILI9341_BLACK);
+    tft.print(series[i].piletas * LARGO_PILETA);
+    tft.print(F("m "));
+    tft.setTextColor(0x90D5, ILI9341_BLACK);
+    tft.println(reloj);
+    tft.setCursor(0, tft.getCursorY()+5);
+  }
+  imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
+  imprimeMetrosTotales(ILI9341_GREEN);
 }
