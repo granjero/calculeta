@@ -360,8 +360,8 @@ void imprimeSeries()
 }
 void imprimeResumen(bool imprime)
 {
-  
   char reloj[6];
+
   if (!imprime) return;
 
   contando = false;
