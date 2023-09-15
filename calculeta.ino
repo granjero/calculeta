@@ -99,10 +99,12 @@ void loop()
     
   }
 
-  else // comenzó a funcionar el aparato
+  // contando 
+  else 
   {
     if (millis() - timestampUltimoCronometroImpreso >= UN_SEGUNDO) // cada vez que pasa un segundo
     {
+      timestampUltimoCronometroImpreso = millis();
       cronometro.pileta++;
       cronometro.total++;
       if (!descansando) cronometro.serie++;
@@ -112,7 +114,6 @@ void loop()
       if (!descansando) imprimeCronometroPileta(cronometro.pileta, ILI9341_WHITE, puedeIncrementarPileta);
       imprimeCronometroSerie(cronometro.serie, ILI9341_WHITE);
       imprimeCronometroTotal(cronometro.total, ILI9341_WHITE);
-      timestampUltimoCronometroImpreso = millis();
     }
 
     // Se presiona el boton
@@ -248,7 +249,7 @@ void imprimeCronometroPileta(unsigned long cronometro, uint16_t color, bool vent
 
   if (contador.piletas == 10) tft.fillRect(0, 0, 60, 60, ILI9341_BLACK);
   if (!descansando)
-    tft.setTextColor((contador.piletas != 0) ? ((ventanaSerie) ? color : 0xFB54) : color, ILI9341_BLACK);
+    tft.setTextColor(ventanaSerie ? color : 0xFB54, ILI9341_BLACK);
   else
     tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
   tft.setTextSize(contador.piletas >= 10 ? 2 : 3);
@@ -361,7 +362,6 @@ void imprimeSeries()
 void imprimeResumen(bool imprime)
 {
   char reloj[6];
-
   if (!imprime) return;
 
   contando = false;
