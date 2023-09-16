@@ -84,10 +84,10 @@ void loop()
     ultimoSegundo = millis();
     incrementaCronometros();
 
-    actualizaCronometroDescanso();
-    actualizaCronometroPileta();
-    actualizaCronometroSerie();
-    actualizaCronometroTotal();
+    pantallaCronometroDescanso();
+    pantallaCronometroPileta();
+    pantallaCronometroSerie();
+    pantallaCronometroTotal();
   }
 
   if (contando // incremento pileta
@@ -100,9 +100,9 @@ void loop()
 
     incrementaContadores(true, false, true); // piletas y total
     reseteaCronometros(true, false, false, false); // pileta
-    actualizaContadorPiletas(); // imprime el contador en pantalla
-    actualizaMetrosSerie(); // imprime los metros de la serie
-    actualizaMetrosTotales(); // imprime los metros totales0
+    pantallaContadorPiletas(); // imprime el contador en pantalla
+    pantallaMetrosSerie(); // imprime los metros de la serie
+    pantallaMetrosTotales(); // imprime los metros totales0
   }
 
   else if (contando
@@ -127,9 +127,9 @@ void loop()
       incrementaSeries(); // guarda los datos de la serie en la estructura
       incrementaContadores(false, true, false); // serie
       tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
-      actualizaMetrosSerie(); // imprime los metros de la ultima serie
-      actualizaCronometroSerie(); // imprime el tiempo de la ultima serie
-      actualizaSeries(); // imprime las series
+      pantallaMetrosSerie(); // imprime los metros de la ultima serie
+      pantallaCronometroSerie(); // imprime el tiempo de la ultima serie
+      pantallaSeries(); // imprime las series
       reseteaContadores(true, false, false); // pileta
       reseteaCronometros(true, false, true, false); // pileta descanso
     }
@@ -141,8 +141,8 @@ void loop()
     timestampBotonPresionado = millis(); //tomo el tiempo en el que se presionó el botón
     descansando = !descansando; // set en false descansando
     tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
-    actualizaContadorPiletas(); // imprime el contador
-    actualizaMetrosSerie();
+    pantallaContadorPiletas(); // imprime el contador
+    pantallaMetrosSerie();
     reseteaCronometros(true, true, true, false);
   }
 
@@ -154,9 +154,9 @@ void loop()
     tft.fillScreen(0); // borra la pantalla a negro
     reseteaCronometros(true, true, true, true);
     reseteaContadores(true, true, true);
-    actualizaContadorPiletas(); // imprime el contador
-    actualizaMetrosSerie(); // imprime los metros serie
-    actualizaMetrosTotales(); //imprime los metros totales
+    pantallaContadorPiletas(); // imprime el contador
+    pantallaMetrosSerie(); // imprime los metros serie
+    pantallaMetrosTotales(); //imprime los metros totales
   }
 }
 
@@ -228,7 +228,7 @@ bool sePuedeIncrementarPileta() // true si pasao el tiempo sin que se incremente
   return millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE;
 }
 
-void actualizaCronometroTotal()
+void pantallaCronometroTotal()
 {
   int16_t x, y;
   uint16_t w, h;
@@ -244,7 +244,7 @@ void actualizaCronometroTotal()
   return;
 }
 
-void actualizaCronometroSerie()
+void pantallaCronometroSerie()
 {
   char reloj[6];
   dibujaReloj(cronometro.serie, reloj, sizeof(reloj));
@@ -258,7 +258,7 @@ void actualizaCronometroSerie()
   return;
 }
 
-void actualizaCronometroDescanso()
+void pantallaCronometroDescanso()
 {
   if (!descansando) return;
 
@@ -272,7 +272,7 @@ void actualizaCronometroDescanso()
   return;
 }
 
-void actualizaCronometroPileta()
+void pantallaCronometroPileta()
 {
   if (descansando) return;
   
@@ -296,7 +296,7 @@ void dibujaReloj(unsigned int tiempo, char* buffer, size_t bufferSize)
   return;
 }
 
-void actualizaContadorPiletas()
+void pantallaContadorPiletas()
 {
   int16_t x, y;
   uint16_t w, h;
@@ -318,7 +318,7 @@ void actualizaContadorPiletas()
   return;
 }
 
-void actualizaMetrosSerie()
+void pantallaMetrosSerie()
 {
   int16_t x, y;
   uint16_t w, h;
@@ -334,7 +334,7 @@ void actualizaMetrosSerie()
   return;
 }
 
-void actualizaMetrosTotales()
+void pantallaMetrosTotales()
 {
   int16_t x, y;
   uint16_t w, h;
@@ -349,7 +349,7 @@ void actualizaMetrosTotales()
   return;
 }
 
-void actualizaSeries()
+void pantallaSeries()
 {
   tft.setCursor(0, 150);
   tft.setTextSize(2);
@@ -429,7 +429,7 @@ void resumen()
     tft.println(reloj);
     tft.setCursor(0, tft.getCursorY()+5);
   }
-  actualizaCronometroTotal();
-  actualizaMetrosTotales();
+  pantallaCronometroTotal();
+  pantallaMetrosTotales();
   return;
 }
