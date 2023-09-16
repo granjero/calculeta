@@ -222,7 +222,7 @@ void incrementaSeries()
   return;
 }
 
-bool sePuedeIncrementarPileta() // true si pasao el tiempo sin que se incremente una serie. 
+bool sePuedeIncrementarPileta() // true si paso el tiempo sin que se incremente una serie. 
 {
   return millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE;
 }
