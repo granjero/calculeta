@@ -42,6 +42,7 @@ typedef struct
 {
   int piletas;
   int tiempo;
+  int descanso;
 } datos_series;
 datos_series series[CANT_MAX_SERIES];
 
@@ -124,7 +125,6 @@ void loop()
       descansando = !descansando; // set en true descansando
     
       guardaDatosSerie(); // guarda los datos de la serie en la estructura
-      incrementaContadores(false, true, false); // serie
       tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
       pantallaMetrosSerie(); // imprime los metros de la ultima serie
       pantallaCronometroSerie(); // imprime el tiempo de la ultima serie
@@ -142,6 +142,8 @@ void loop()
     tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
     pantallaContadorPiletas(); // imprime el contador
     pantallaMetrosSerie();
+    guardaDescansoSerie();
+    incrementaContadores(false, true, false); // serie
     reseteaCronometros(true, true, true, false);
   }
 
@@ -219,6 +221,12 @@ void guardaDatosSerie()
 {
   series[contador.series].piletas = contador.piletas;
   series[contador.series].tiempo = cronometro.serie;
+  return;
+}
+
+void guardaDescansoSerie()
+{
+  series[contador.series].descanso = cronometro.descanso;
   return;
 }
 
@@ -412,19 +420,22 @@ void resumen()
   tft.setTextSize(2);
   for (int i = 0; i < CANT_MAX_SERIES; ++i)
   {
-    dibujaReloj(series[i].tiempo, reloj, sizeof(reloj));
-    if (series[i].piletas == 0) continue;
+    if (series[i].piletas == 0) continue; // cuando no hay mas datos...
     tft.setTextColor(ILI9341_CYAN, ILI9341_BLACK);
-    // tft.print(i);
-    tft.write(0x10); // sibolo del reloj
+    tft.write(0x10); // sibolo triangulo de costado
     tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
-    tft.print(F(" "));
+    // tft.print(F(" "));
     tft.print(series[i].piletas);
     tft.print(F(" "));
     tft.setTextColor(ILI9341_GREENYELLOW, ILI9341_BLACK);
     tft.print(series[i].piletas * LARGO_PILETA);
     tft.print(F("m "));
     tft.setTextColor(0x90D5, ILI9341_BLACK);
+    dibujaReloj(series[i].tiempo, reloj, sizeof(reloj));
+    tft.print(reloj);
+    tft.print(F(" "));
+    tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
+    dibujaReloj(series[i].descanso, reloj, sizeof(reloj));
     tft.println(reloj);
     tft.setCursor(0, tft.getCursorY()+5);
   }
