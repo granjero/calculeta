@@ -155,6 +155,7 @@ void loop()
     tft.fillScreen(0); // borra la pantalla a negro
     reseteaCronometros(true, true, true, true);
     reseteaContadores(true, true, true);
+    reseteaSeries();
     pantallaContadorPiletas(); // imprime el contador
     pantallaMetrosSerie(); // imprime los metros serie
     pantallaMetrosTotales(); //imprime los metros totales
@@ -213,6 +214,7 @@ void reseteaSeries()
   {
     series[i].tiempo = 0;
     series[i].piletas = 0;
+    series[i].descanso = 0;
   }
   return;
 }
