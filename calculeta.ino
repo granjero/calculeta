@@ -101,11 +101,12 @@ void loop()
     incrementaContadores(true, false, true); // piletas y total
     reseteaCronometros(true, false, false, false); // pileta
     pantallaContadorPiletas(); // imprime el contador en pantalla
+    pantallaCronometroPileta();
     pantallaMetrosSerie(); // imprime los metros de la serie
     pantallaMetrosTotales(); // imprime los metros totales0
   }
 
-  else if (contando
+  else if (contando // muestra el resumen
       && !contandoPiletas
       && !descansando
       && contador.piletas == 0
