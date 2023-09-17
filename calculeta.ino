@@ -123,7 +123,7 @@ void loop()
     {
       descansando = !descansando; // set en true descansando
     
-      incrementaSeries(); // guarda los datos de la serie en la estructura
+      guardaDatosSerie(); // guarda los datos de la serie en la estructura
       incrementaContadores(false, true, false); // serie
       tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
       pantallaMetrosSerie(); // imprime los metros de la ultima serie
@@ -145,8 +145,8 @@ void loop()
     reseteaCronometros(true, true, true, false);
   }
 
-  else if (!contando 
-      && seHaPresionadoElBoton) // esperando para empezar
+  else if (!contando // esperando para empezar
+      && seHaPresionadoElBoton) 
   {
     timestampBotonPresionado = millis(); //tomo el tiempo en el que se presionó el botón
     contando = !contando; // se empieza a contar
@@ -215,7 +215,7 @@ void reseteaSeries()
   return;
 }
 
-void incrementaSeries()
+void guardaDatosSerie()
 {
   series[contador.series].piletas = contador.piletas;
   series[contador.series].tiempo = cronometro.serie;
