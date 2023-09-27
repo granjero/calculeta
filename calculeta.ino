@@ -31,13 +31,20 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 Button boton(BOTON);
 
-boolean contando = false;
-boolean contandoPiletas = false;
-boolean descansando = false;
 boolean seHaPresionadoElBoton = false;
 
 unsigned long ultimoSegundo = 0;
 unsigned long timestampBotonPresionado = 0;
+
+enum Calculeta { // estados del programa
+    AUMENTA_PILETAS,
+    AUMENTA_SERIES,
+    ESPERANDO_INICIO,
+    DESCANSANDO,
+    VER_RESUMEN
+  };
+
+Calculeta calculeta = ESPERANDO_INICIO;
 
 typedef struct
 {
@@ -87,98 +94,95 @@ void loop()
 {
   seHaPresionadoElBoton = boton.pressed(); // chequeo si se ha presionado el botón
 
-  contandoPiletas = sePuedeIncrementarPileta();
+  queEstamosAumentando();
 
-  if ((millis() - ultimoSegundo >= UN_SEGUNDO) && contando) // cada vez que pasa un segundo
+  if ((millis() - ultimoSegundo >= UN_SEGUNDO)) // cada vez que pasa un segundo
   {
-    ultimoSegundo = millis();
-    incrementaCronometros();
+    switch (calculeta) {
+      case ESPERANDO_INICIO:
+        break;
+      
+      case VER_RESUMEN:
+        break;
 
-    pantallaCronometroDescanso();
-    pantallaCronometroPileta();
-    pantallaCronometroSerie();
-    pantallaCronometroTotal();
-  }
+      default:
+          ultimoSegundo = millis();
+          incrementaCronometros();
 
-  if (contando // incremento pileta
-      && contandoPiletas 
-      && !descansando
-      && seHaPresionadoElBoton) 
-  {
-    timestampBotonPresionado = millis(); //tomo el tiempo en el que se presionó el botón
-    contandoPiletas = !contandoPiletas; // set en falso contandoPiletas.
-
-    guardaDatosPileta();
-    incrementaContadores(true, false, true, true); // piletas total totalConDescansos
-    reseteaCronometros(true, false, false, false); // pileta
-    pantallaContadorPiletas(); // imprime el contador en pantalla
-    pantallaCronometroPileta();
-    pantallaMetrosSerie(); // imprime los metros de la serie
-    pantallaMetrosTotales(); // imprime los metros totales0
-  }
-
-  else if (contando // muestra el resumen
-      && !contandoPiletas
-      && !descansando
-      && contador.piletas == 0
-      && seHaPresionadoElBoton)
-  {
-    resumen();
-  }
-
-  else if (contando // incremento serie
-      && !contandoPiletas 
-      && !descansando
-      && seHaPresionadoElBoton ) 
-  {
-    timestampBotonPresionado = millis(); //tomo el tiempo en el que se presionó el botón
-    if (contador.piletas !=  0) // no tiene sentido una serie de 0 piletas
-    {
-      descansando = !descansando; // set en true descansando
-    
-      guardaDatosSerie(); // guarda los datos de la serie en la estructura
-      tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
-      pantallaMetrosSerie(); // imprime los metros de la ultima serie
-      pantallaCronometroSerie(); // imprime el tiempo de la ultima serie
-      pantallaSeries(); // imprime las series
-      reseteaContadores(true, false, false, false); // pileta
-      reseteaCronometros(true, false, true, false); // pileta descanso
+          if (calculeta == DESCANSANDO) pantallaCronometroDescanso();
+          if (calculeta != DESCANSANDO) pantallaCronometroPileta();
+          pantallaCronometroSerie();
+          pantallaCronometroTotal();
+        break;
     }
   }
-  
-  else if (descansando // deja de descansar
-      && seHaPresionadoElBoton ) 
-  {
-    timestampBotonPresionado = millis(); //tomo el tiempo en el que se presionó el botón
-    descansando = !descansando; // set en false descansando
-    tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
-    pantallaContadorPiletas(); // imprime el contador
-    pantallaMetrosSerie();
-    guardaDescansoPileta();
-    guardaDescansoSerie();
-    incrementaContadores(false, true, false, true); // serie totalConDescansos
-    reseteaCronometros(true, true, true, false);
-  }
 
-  else if (!contando // esperando para empezar
-      && seHaPresionadoElBoton) 
+  if (seHaPresionadoElBoton)
   {
     timestampBotonPresionado = millis(); //tomo el tiempo en el que se presionó el botón
-    contando = !contando; // se empieza a contar
-    tft.fillScreen(0); // borra la pantalla a negro
-    reseteaCronometros(true, true, true, true);
-    reseteaContadores(true, true, true, true);
-    reseteaSeries();
-    reseteaPiletas();
-    pantallaContadorPiletas(); // imprime el contador
-    pantallaMetrosSerie(); // imprime los metros serie
-    pantallaMetrosTotales(); //imprime los metros totales
+
+    switch (calculeta) {
+      case ESPERANDO_INICIO:
+        calculeta = AUMENTA_PILETAS;
+        tft.fillScreen(0); // borra la pantalla a negro
+        reseteaCronometros(true, true, true, true);
+        reseteaContadores(true, true, true, true);
+        reseteaSeries();
+        reseteaPiletas();
+        pantallaContadorPiletas(); // imprime el contador
+        pantallaMetrosSerie(); // imprime los metros serie
+        pantallaMetrosTotales(); //imprime los metros totales
+        break;
+
+      case AUMENTA_PILETAS:
+        calculeta = AUMENTA_SERIES;
+
+        guardaDatosPileta();
+        incrementaContadores(true, false, true, true); // piletas total totalConDescansos
+        reseteaCronometros(true, false, false, false); // pileta
+        pantallaContadorPiletas(); // imprime el contador en pantalla
+        pantallaCronometroPileta();
+        pantallaMetrosSerie(); // imprime los metros de la serie
+        pantallaMetrosTotales(); // imprime los metros totales0
+        break;
+
+      case AUMENTA_SERIES:
+        if (contador.piletas !=  0) // no tiene sentido una serie de 0 piletas
+        {
+          calculeta = DESCANSANDO;
+        
+          guardaDatosSerie(); // guarda los datos de la serie en la estructura
+          tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
+          pantallaMetrosSerie(); // imprime los metros de la ultima serie
+          pantallaCronometroSerie(); // imprime el tiempo de la ultima serie
+          pantallaSeries(); // imprime las series
+          reseteaContadores(true, false, false, false); // pileta
+          reseteaCronometros(true, false, true, false); // pileta descanso
+        }
+        else 
+        {
+          calculeta = VER_RESUMEN;
+          resumen();
+        }
+        break;
+
+      case DESCANSANDO:
+        calculeta = AUMENTA_PILETAS;
+        tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
+        pantallaContadorPiletas(); // imprime el contador
+        pantallaMetrosSerie();
+        guardaDescansoPileta();
+        guardaDescansoSerie();
+        incrementaContadores(false, true, false, true); // serie totalConDescansos
+        reseteaCronometros(true, true, true, false);
+        break;
+    }
   }
 }
 
 void inicializaCalculeta()
 {
-  contando = false; 
+  calculeta = ESPERANDO_INICIO;
   reseteaCronometros(true, true, true, true);
   reseteaContadores(true, true, true, true);
   reseteaSeries();
@@ -219,7 +223,7 @@ void incrementaCronometros()
 {
   cronometro.pileta++;
   cronometro.total++;
-  if (descansando) cronometro.descanso++;
+  if (calculeta == DESCANSANDO) cronometro.descanso++;
   else cronometro.serie++;
   return;
 }
@@ -272,9 +276,30 @@ void guardaDescansoPileta()
   return;
 }
 
-bool sePuedeIncrementarPileta() // true si paso el tiempo sin que se incremente una serie. 
+void queEstamosAumentando() 
 {
-  return millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE;
+  switch(calculeta){
+    case ESPERANDO_INICIO:
+      break;
+
+    case DESCANSANDO:
+      break;
+
+    case VER_RESUMEN:
+      break;
+
+    default:
+      if (millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE)
+      {
+        calculeta = AUMENTA_PILETAS;
+      }
+      else
+      {
+        calculeta = AUMENTA_SERIES;
+      }
+      break;
+  }
+  return;
 }
 
 void pantallaCronometroTotal()
@@ -309,8 +334,6 @@ void pantallaCronometroSerie()
 
 void pantallaCronometroDescanso()
 {
-  if (!descansando) return;
-
   char reloj[6];
   dibujaReloj(cronometro.descanso, reloj, sizeof(reloj));
 
@@ -323,13 +346,11 @@ void pantallaCronometroDescanso()
 
 void pantallaCronometroPileta()
 {
-  if (descansando) return;
-  
   char reloj[6];
   dibujaReloj(cronometro.pileta, reloj, sizeof(reloj));
 
   if (contador.piletas == 10) tft.fillRect(0, 0, 60, 60, ILI9341_BLACK);
-  tft.setTextColor(contandoPiletas ? ILI9341_WHITE : 0xFB54, ILI9341_BLACK);
+  tft.setTextColor(calculeta == AUMENTA_PILETAS ? ILI9341_WHITE : 0xFB54, ILI9341_BLACK);
   tft.setTextSize(contador.piletas >= 10 ? 2 : 3);
   tft.setCursor(0, 0);
   tft.println(reloj);
@@ -453,7 +474,7 @@ void resumen()
 {
   char reloj[6];
 
-  contando = false;
+  // contando = false;
   tft.fillScreen(ILI9341_BLACK);
   tft.setCursor(0, 0);
   tft.setTextSize(3);
@@ -483,18 +504,16 @@ void resumen()
   }
   pantallaCronometroTotal();
   pantallaMetrosTotales();
-  for (int i = 0; i < CANT_PILETAS; i++)
-  {
-    if(piletas[i].tiempo > 0)
-    {
-      if (piletas[i].pileta) 
-      Serial.print(F("P: "));
-      else
-      Serial.print(F("D: "));
-      Serial.println(piletas[i].tiempo);
-    }
-
-
-  }
+  // for (int i = 0; i < CANT_PILETAS; i++)
+  // {
+  //   if(piletas[i].tiempo > 0)
+  //   {
+  //     if (piletas[i].pileta) 
+  //     Serial.print(F("P: "));
+  //     else
+  //     Serial.print(F("D: "));
+  //     Serial.println(piletas[i].tiempo);
+  //   }
+  // }
   return;
 }
