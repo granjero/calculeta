@@ -5,7 +5,7 @@
 #include "Button.h"
 #include "Logo.h"
 
-#include <Fonts/FreeSans9pt7b.h>
+// #include <Fonts/FreeSans9pt7b.h>
 
 // reed switch
 #define BOTON     D1
@@ -25,8 +25,8 @@
 #define TIEMPO_PULSO_RESET      3000
 #define CANT_MAX_SERIES         100
 #define CANT_PILETAS            255
-#define ALTO_FUENTE_UNITARIA    8
-#define ANCHO_FUENTE_UNITARIA   6
+#define ALTO_FUENTE_UNITARIA    8 // pixeles
+#define ANCHO_FUENTE_UNITARIA   6 // pixeles 
 #define TAM_FUENTE_CONTADOR     15
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
@@ -184,6 +184,7 @@ void loop()
         break;
     }
   }
+
   if (seHaLiberadoElBoton)
   {
     if(millis() - timestampBotonPresionado >= TIEMPO_PULSO_RESET)
