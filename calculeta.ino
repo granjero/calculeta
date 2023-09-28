@@ -5,6 +5,8 @@
 #include "Button.h"
 #include "Logo.h"
 
+#include <Fonts/FreeSans9pt7b.h>
+
 // reed switch
 #define BOTON     D1
 // display pins
@@ -32,6 +34,7 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 Button boton(BOTON);
 
 boolean seHaPresionadoElBoton = false;
+boolean seHaLiberadoElBoton = false;
 
 unsigned long ultimoSegundo = 0;
 unsigned long timestampBotonPresionado = 0;
@@ -87,14 +90,15 @@ void setup()
   boton.begin();  // inicializa el boton
   tft.begin();    // inicializa la pantalla
 
-  inicializaCalculeta();
+  inicializaCalculeta(&calculeta);
 }
 
 void loop() 
 {
-  seHaPresionadoElBoton = boton.pressed(); // chequeo si se ha presionado el botón
+  seHaPresionadoElBoton = boton.pressed(); 
+  seHaLiberadoElBoton = boton.released();  
 
-  queEstamosAumentando();
+  queEstamosAumentando(&calculeta, calculeta);
 
   if ((millis() - ultimoSegundo >= UN_SEGUNDO)) // cada vez que pasa un segundo
   {
@@ -107,7 +111,7 @@ void loop()
 
       default:
           ultimoSegundo = millis();
-          incrementaCronometros();
+          incrementaCronometros(calculeta);
 
           if (calculeta == DESCANSANDO) pantallaCronometroDescanso();
           if (calculeta != DESCANSANDO) pantallaCronometroPileta();
@@ -124,7 +128,7 @@ void loop()
     switch (calculeta) {
       case ESPERANDO_INICIO:
         calculeta = AUMENTA_PILETAS;
-        tft.fillScreen(0); // borra la pantalla a negro
+        tft.fillScreen(0); // pinta la pantalla de negro
         reseteaCronometros(true, true, true, true);
         reseteaContadores(true, true, true, true);
         reseteaSeries();
@@ -136,7 +140,6 @@ void loop()
 
       case AUMENTA_PILETAS:
         calculeta = AUMENTA_SERIES;
-
         guardaDatosPileta();
         incrementaContadores(true, false, true, true); // piletas total totalConDescansos
         reseteaCronometros(true, false, false, false); // pileta
@@ -150,7 +153,6 @@ void loop()
         if (contador.piletas !=  0) // no tiene sentido una serie de 0 piletas
         {
           calculeta = DESCANSANDO;
-        
           guardaDatosSerie(); // guarda los datos de la serie en la estructura
           tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
           pantallaMetrosSerie(); // imprime los metros de la ultima serie
@@ -162,7 +164,7 @@ void loop()
         else 
         {
           calculeta = VER_RESUMEN;
-          resumen();
+          pantallaResumen(2);
         }
         break;
 
@@ -176,13 +178,22 @@ void loop()
         incrementaContadores(false, true, false, true); // serie totalConDescansos
         reseteaCronometros(true, true, true, false);
         break;
+
+      case VER_RESUMEN:
+        pantallaResumen(1);
+        break;
     }
+  }
+  if (seHaLiberadoElBoton)
+  {
+    if(millis() - timestampBotonPresionado >= TIEMPO_PULSO_RESET)
+    inicializaCalculeta(&calculeta);
   }
 }
 
-void inicializaCalculeta()
+void inicializaCalculeta(Calculeta* nuevoEstado)
 {
-  calculeta = ESPERANDO_INICIO;
+  *nuevoEstado = ESPERANDO_INICIO;
   reseteaCronometros(true, true, true, true);
   reseteaContadores(true, true, true, true);
   reseteaSeries();
@@ -219,11 +230,11 @@ void reseteaCronometros(boolean pileta, boolean serie, boolean descanso, boolean
   return;
 }
 
-void incrementaCronometros()
+void incrementaCronometros(Calculeta estado)
 {
   cronometro.pileta++;
   cronometro.total++;
-  if (calculeta == DESCANSANDO) cronometro.descanso++;
+  if (estado == DESCANSANDO) cronometro.descanso++;
   else cronometro.serie++;
   return;
 }
@@ -276,9 +287,9 @@ void guardaDescansoPileta()
   return;
 }
 
-void queEstamosAumentando() 
+void queEstamosAumentando(Calculeta* nuevoEstado, Calculeta estado ) 
 {
-  switch(calculeta){
+  switch(estado){
     case ESPERANDO_INICIO:
       break;
 
@@ -291,11 +302,11 @@ void queEstamosAumentando()
     default:
       if (millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE)
       {
-        calculeta = AUMENTA_PILETAS;
+        *nuevoEstado = AUMENTA_PILETAS;
       }
       else
       {
-        calculeta = AUMENTA_SERIES;
+        *nuevoEstado = AUMENTA_SERIES;
       }
       break;
   }
@@ -470,22 +481,25 @@ void pantallaSeries()
   return;
 }
 
-void resumen()
+void pantallaResumen(int tamanioFuente)
 {
   char reloj[6];
+  int tam = tamanioFuente;
 
-  // contando = false;
   tft.fillScreen(ILI9341_BLACK);
   tft.setCursor(0, 0);
-  tft.setTextSize(3);
+  tft.setTextSize(tamanioFuente + 1);
+  // tft.setFont(&FreeSans9pt7b);
+  tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   tft.println(F("Resumen"));
-  tft.setCursor(0, tft.getCursorY()+10);
-  tft.setTextSize(2);
+  tft.setCursor(0, tft.getCursorY() + 5);
+  tft.setTextSize(tamanioFuente);
   for (int i = 0; i < CANT_MAX_SERIES; ++i)
   {
     if (series[i].piletas == 0) continue; // cuando no hay mas datos...
     tft.setTextColor(ILI9341_CYAN, ILI9341_BLACK);
     tft.write(0x10); // sibolo triangulo de costado
+    // tft.print(F(">"));
     tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
     // tft.print(F(" "));
     tft.print(series[i].piletas);
@@ -500,8 +514,9 @@ void resumen()
     tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
     dibujaReloj(series[i].descanso, reloj, sizeof(reloj));
     tft.println(reloj);
-    tft.setCursor(0, tft.getCursorY()+5);
+    tft.setCursor(0, tft.getCursorY() + 3);
   }
+  // tft.setFont();
   pantallaCronometroTotal();
   pantallaMetrosTotales();
   // for (int i = 0; i < CANT_PILETAS; i++)
