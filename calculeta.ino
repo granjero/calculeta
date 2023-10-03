@@ -31,7 +31,7 @@
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
-Button boton(BOTON);
+Button boton(BOTON, 750); // asegurarse de tener la ultima version madleech/Button
 
 boolean seHaPresionadoElBoton = false;
 boolean seHaLiberadoElBoton = false;
@@ -40,14 +40,14 @@ unsigned long ultimoSegundo = 0;
 unsigned long timestampBotonPresionado = 0;
 
 enum Calculeta { // estados del programa
-    AUMENTA_PILETAS,
-    AUMENTA_SERIES,
-    ESPERANDO_INICIO,
+    PILETAS,
+    SERIES,
+    INICIO,
     DESCANSANDO,
-    VER_RESUMEN
+    RESUMEN
   };
 
-Calculeta calculeta = ESPERANDO_INICIO;
+Calculeta calculeta = INICIO;
 
 typedef struct
 {
@@ -103,10 +103,10 @@ void loop()
   if ((millis() - ultimoSegundo >= UN_SEGUNDO)) // cada vez que pasa un segundo
   {
     switch (calculeta) {
-      case ESPERANDO_INICIO:
+      case INICIO:
         break;
       
-      case VER_RESUMEN:
+      case RESUMEN:
         break;
 
       default:
@@ -126,8 +126,8 @@ void loop()
     timestampBotonPresionado = millis(); //tomo el tiempo en el que se presionó el botón
 
     switch (calculeta) {
-      case ESPERANDO_INICIO:
-        calculeta = AUMENTA_PILETAS;
+      case INICIO:
+        calculeta = PILETAS;
         tft.fillScreen(0); // pinta la pantalla de negro
         reseteaCronometros(true, true, true, true);
         reseteaContadores(true, true, true, true);
@@ -138,8 +138,8 @@ void loop()
         pantallaMetrosTotales(); //imprime los metros totales
         break;
 
-      case AUMENTA_PILETAS:
-        calculeta = AUMENTA_SERIES;
+      case PILETAS:
+        calculeta = SERIES;
         guardaDatosPileta();
         incrementaContadores(true, false, true, true); // piletas total totalConDescansos
         reseteaCronometros(true, false, false, false); // pileta
@@ -149,7 +149,7 @@ void loop()
         pantallaMetrosTotales(); // imprime los metros totales0
         break;
 
-      case AUMENTA_SERIES:
+      case SERIES:
         if (contador.piletas !=  0) // no tiene sentido una serie de 0 piletas
         {
           calculeta = DESCANSANDO;
@@ -163,13 +163,13 @@ void loop()
         }
         else 
         {
-          calculeta = VER_RESUMEN;
+          calculeta = RESUMEN;
           pantallaResumen(2);
         }
         break;
 
       case DESCANSANDO:
-        calculeta = AUMENTA_PILETAS;
+        calculeta = PILETAS;
         tft.fillRect(0, 0, 240, 145, ILI9341_BLACK); // borra el contador y el cronometro pileta 
         pantallaContadorPiletas(); // imprime el contador
         pantallaMetrosSerie();
@@ -179,7 +179,7 @@ void loop()
         reseteaCronometros(true, true, true, false);
         break;
 
-      case VER_RESUMEN:
+      case RESUMEN:
         pantallaResumen(1);
         break;
     }
@@ -194,7 +194,7 @@ void loop()
 
 void inicializaCalculeta(Calculeta* nuevoEstado)
 {
-  *nuevoEstado = ESPERANDO_INICIO;
+  *nuevoEstado = INICIO;
   reseteaCronometros(true, true, true, true);
   reseteaContadores(true, true, true, true);
   reseteaSeries();
@@ -291,23 +291,23 @@ void guardaDescansoPileta()
 void queEstamosAumentando(Calculeta* nuevoEstado, Calculeta estado ) 
 {
   switch(estado){
-    case ESPERANDO_INICIO:
+    case INICIO:
       break;
 
     case DESCANSANDO:
       break;
 
-    case VER_RESUMEN:
+    case RESUMEN:
       break;
 
     default:
       if (millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE)
       {
-        *nuevoEstado = AUMENTA_PILETAS;
+        *nuevoEstado = PILETAS;
       }
       else
       {
-        *nuevoEstado = AUMENTA_SERIES;
+        *nuevoEstado = SERIES;
       }
       break;
   }
@@ -362,7 +362,7 @@ void pantallaCronometroPileta()
   dibujaReloj(cronometro.pileta, reloj, sizeof(reloj));
 
   if (contador.piletas == 10) tft.fillRect(0, 0, 60, 60, ILI9341_BLACK);
-  tft.setTextColor(calculeta == AUMENTA_PILETAS ? ILI9341_WHITE : 0xFB54, ILI9341_BLACK);
+  tft.setTextColor(calculeta == PILETAS ? ILI9341_WHITE : 0xFB54, ILI9341_BLACK);
   tft.setTextSize(contador.piletas >= 10 ? 2 : 3);
   tft.setCursor(0, 0);
   tft.println(reloj);
