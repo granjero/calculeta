@@ -589,7 +589,7 @@ String stringDatos()
       } else {
         datos += "], 'D': ";
         datos += piletas[i].tiempo;
-        datos += "}{{'P': [";
+        datos += "}{'P': [";
       }
     }
   }
