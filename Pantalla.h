@@ -32,12 +32,12 @@ private:
    #define LARGO_PILETA  50
    #define CANT_MAX_SERIES 128
    #define CANT_MAX_PILETAS  128
-   // display dimensiones
+
    #define AN_PANTALLA  240 
    #define AL_PANTALLA  320
 
    #define TIEMPO_INCREMENTO_SERIE 5000 // 10 segundos
-   // fuentes
+
    #define TAM_FUENTE_CONTADOR   15
    #define TAM_FUENTE_CRON       3
    #define TAM_FUENTE_CRON_CHICO 2
@@ -63,7 +63,7 @@ private:
    GFXcanvas1 canvas_crono;
    GFXcanvas1 canvas_metros_serie;
    GFXcanvas1 canvas_metros_tot;
-   // Private member functions
+
    char* reloj(int segundos);
 };
 
