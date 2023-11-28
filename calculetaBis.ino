@@ -81,8 +81,8 @@ void loop() {
         incrementaCronometros(calculeta);
 
         if (calculeta != DESCANSANDO) {
-          pantalla.cronos(cronometro.pileta, AN_FUENTE_UNITARIA * 3, AL_FUENTE_UNITARIA * 3 * 2, contador.piletas < 10 ? 3 : 2);
-          pantalla.cronos(cronometro.serie, AN_FUENTE_UNITARIA * 3 * 2, TAM_FUENTE_CONTADOR * AL_FUENTE_UNITARIA, 3);
+          pantalla.cronos(cronometro.pileta, AN_CHAR_CRON, AL_CHAR_CRON, contador.piletas < 10 ? 3 : 2);
+          pantalla.cronos(cronometro.serie, AN_CHAR_CRON * 2, AL_CHAR_CONTADOR, 3);
         } else {
           pantalla.cronoDescanso(cronometro.descanso);
         }
@@ -115,9 +115,10 @@ void loop() {
         Serial.println(F(" piletas"));
         calculeta = SERIES;
         guardaPileta();
-        reseteaCronometros(true, false, false, false); // pileta[*] serie[] descanso[] total[]
         incrementaContadores(true, false, true, true); // piletas[*] series[] total[*] totalConDescansos[*]
-        pantalla.cronos(cronometro.pileta, AN_CHAR_CRON, AL_CHAR_CRON * 2, contador.piletas < 10 ? 3 : 2);
+        pantalla.cronos(cronometro.pileta, AN_CHAR_CRON, AL_CHAR_CRON * 3, contador.piletas < 10 ? 3 : 2); // ultima pileta
+        reseteaCronometros(true, false, false, false); // pileta[*] serie[] descanso[] total[]
+        pantalla.cronos(cronometro.pileta, AN_CHAR_CRON, AL_CHAR_CRON, contador.piletas < 10 ? 3 : 2);
         pantalla.contadorPiletas(contador.piletas); // imprime el contador
         pantalla.metrosSerie(contador.piletas); // imprime los metros  
         pantalla.metrosTot(contador.total); // imprime los metros totales 

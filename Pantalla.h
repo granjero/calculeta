@@ -36,7 +36,7 @@ private:
    #define AN_PANTALLA  240 
    #define AL_PANTALLA  320
 
-   #define TIEMPO_INCREMENTO_SERIE 5000 // 10 segundos
+   #define TIEMPO_INCREMENTO_SERIE 10000 // 10 segundos
 
    #define TAM_FUENTE_CONTADOR   15
    #define TAM_FUENTE_CRON       3

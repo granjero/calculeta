@@ -22,7 +22,8 @@ void Pantalla::inicio() {
   tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   tft.setTextSize(3);
   tft.setCursor(0, AL_CHAR_CONTADOR);
-  tft.write(0x0F); // sibolo del reloj
+  tft.write(0xE3); // sibolo del reloj
+  // tft.write(0x0F); // sibolo del reloj
 }
 
 void Pantalla::borraContador(){
@@ -42,7 +43,7 @@ void Pantalla::contadorPiletas(unsigned int contador) {
   canvas_contador_piletas.print(contador);
   tft.drawBitmap(AN_PANTALLA - AN_CHAR_CONTADOR * cantDigitos, 0,
   canvas_contador_piletas.getBuffer(), canvas_contador_piletas.width(), canvas_contador_piletas.height(),
-  0x8E9E, ILI9341_BLACK);
+  0x653E, ILI9341_BLACK);
   return;
 }
 
@@ -51,6 +52,9 @@ void Pantalla::cronos(int numero, int x, int y, int tamFuente) {
   uint16_t color = ILI9341_WHITE;
   if((numero <= TIEMPO_INCREMENTO_SERIE / 1000) && (y < AL_CHAR_CONTADOR)){
     color = 0xFB54;
+  }
+  if(y == AL_CHAR_CRON * 3){
+    color = 0x07E3;
   }
   if (tamFuente == TAM_FUENTE_CRON_CHICO) {
     canvas_crono.setCursor(canvas_crono.width() - AN_CHAR_CRON_CHICO * 5, 0); // Pos. is BASE LINE when using fonts!
@@ -66,10 +70,11 @@ void Pantalla::cronos(int numero, int x, int y, int tamFuente) {
 }
 
 void Pantalla::cronoDescanso(int numero) {
+  char* relos = reloj(numero);
   tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
   tft.setTextSize(8);
   tft.setCursor(0, 25);
-  tft.println(reloj(numero));
+  tft.println(relos);
 return;
 }
 
@@ -139,9 +144,9 @@ for (const auto &entry : counts) {
   tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
   tft.print(count);
   tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
-  tft.print(F("x "));
+  tft.print(F("d"));
   tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
-  tft.print(piletas);
+  tft.print(piletas * LARGO_PILETA);
   tft.print(F(" "));
   tft.setTextColor(ILI9341_GREENYELLOW, ILI9341_BLACK);
   tft.print(count * piletas * LARGO_PILETA);
