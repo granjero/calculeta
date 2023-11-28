@@ -8,4 +8,4 @@ typedef struct {
     unsigned int descanso;
 } DataSeries;
 
-#endif // YOURSTRUCTFILE_H
+#endif 
