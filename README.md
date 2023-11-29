@@ -5,6 +5,11 @@ Por eso tuve que hacer este aparato (?)
 
 La calculeta es un dispositivo fundamental y fenomenal a la hora de nadar. Lleva la cuenta de piletas y series que es imposible llevar con el cerebro.
 
+### Funcionamiento
+
+[Inspirado en: ](https://www.hackster.io/user3330224/swimming-pool-lap-counter-d9196f)
+ 
+
 <div style="display: flex; justify-content: space-between;">
   <img src="https://calculeta.estonoesunaweb.com.ar/calculeta_ini.png" alt="calculeta pantalla de inicio" width="20%">
   <img src="https://calculeta.estonoesunaweb.com.ar/calculeta_contando_piles.png" alt="calculeta contando piletas" width="20%">
