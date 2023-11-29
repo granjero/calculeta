@@ -12,7 +12,7 @@ La calculeta es un dispositivo fundamental y fenomenal a la hora de nadar. Lleva
 
   Se diferencia entre __pileta__ y __largo__
 
-  __largo__: El largo de la piscina. (a la que voy mide 25mts)
+  __largo__: El largo de la piscina. (el de la que voy mide 25mts)
 
   __pileta__: El largo de ida + el largo de vuelta. (50mts*)
 

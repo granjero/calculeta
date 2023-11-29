@@ -1,6 +1,7 @@
 #include "Button.h"
 #include "DataSeries.h"
 #include "Pantalla.h"
+#include "Conexion.h"
 
 #define BOTON     D1
 
