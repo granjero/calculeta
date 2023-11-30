@@ -19,6 +19,8 @@ Button boton(BOTON, 750); // asegurarse de tener la ultima version madleech/Butt
 
 Pantalla pantalla;
 
+Conexion conexion;
+
 DataSeries dataSerie[CANT_MAX_SERIES];
 
 enum Calculeta { // estados del programa
@@ -59,6 +61,8 @@ void setup(){
   Serial.println(calculeta);
   boton.begin();  // inicializa el boton
   inicializaCalculeta(&calculeta);
+  conexion.conectaAlWiFi();
+  conexion.testRequest();
 }
 
 void loop() {

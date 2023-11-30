@@ -6,7 +6,7 @@ Pantalla::Pantalla() :
   canvas_crono(AN_CHAR_CRON * 5, AL_CHAR_CRON * 1),
   canvas_metros_serie(AN_CHAR_MTS * 5, AL_CHAR_MTS * 1),
   canvas_metros_tot(AN_CHAR_MTS_TOT * 5, AL_CHAR_MTS_TOT * 1) {  
-    tft.begin();
+  tft.begin();
 }
 
 char* Pantalla::reloj(int segundos) {
