@@ -1,45 +1,59 @@
 #include "Conexion.h"
 
-Conexion::Conexion() : cert() { 
-  // ssid = "calculeta";
-  // password = "calculeta00";
+Conexion::Conexion() : https(), client(), cert() { 
+  client.setInsecure(); // no me interesa corroborar nada
 }
 
-void Conexion::conectaAlWiFi() {
-  WiFi.mode(WIFI_STA);
+
+void Conexion::conectar() {
+  WiFi.mode(WIFI_STA); // conecta al wifi
   WiFi.begin(ssid, password);
-  Serial.print("esperando AP llamado calculeta");
+
+  // Serial.print("esperando WiFi");
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
+    // Serial.print(".");
     delay(500);
   }
-  Serial.println();
-  Serial.println("\nconectado.\nseteando la hora");
-  configTime(-3 * 3600, 0, "pool.ntp.org", "time.nist.gov"); // parece que se necesita la hora para el handshake de https
-  time_t now = time(nullptr);
-  struct tm timeinfo;
-  gmtime_r(&now, &timeinfo);
+  // Serial.println("\nconectado IP: ");
+  // Serial.println(WiFi.localIP());
+  // Serial.println(WiFi.macAddress());
+
+  return;
 }
 
-void Conexion::testRequest() {
-  if ((WiFi.status() == WL_CONNECTED)) {
-    X509List cert(IRG_Root_X1);
-    client.setTrustAnchors(&cert); // linkea el cliente al certificado
-    HTTPClient https;
-    if (https.begin(client, "https://calculeta.estonoesunaweb.com.ar/api/test")) {  // HTTPS
-      int httpCode = https.GET();
-      if (httpCode > 0) {
-        String payload = https.getString();
-        Serial.println(payload);
-      } else {
-        Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
-      }
-      https.end();
-    } else {
-      Serial.printf("[HTTPS] Unable to connect\n");
-    }
+/*
+ * @ pileta String con los datos
+ * @ return codigo http de respuesta
+ * 400 Bad Request
+ * 401 Unauthorized
+ * 201 Created
+*/
+int Conexion::pileta(String pileta) {
+  conectar();
+  int httpCode;
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");
+  if (https.begin(client, apiUrlPileta)) {  // HTTPS
+    // Serial.println(apiUrlPileta);
+    https.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    String httpRequestData = "email=";
+    httpRequestData += mac;
+    httpRequestData += "@calculeta.com.ar";
+    httpRequestData += "&password=";
+    httpRequestData += mac;
+    httpRequestData += "&pileta=";
+    httpRequestData += pileta;
+    httpCode = https.POST(httpRequestData);
+    // Serial.printf("[HTTPS] TEST REQUEST CODE: %d\n", httpCode);
+    String payload = https.getString();
+    // Serial.println(httpCode);
+    // return payload;
+  } //else Serial.println(httpCode); 
+  // Serial.println(mac);
+  
+  if (httpCode == 201) {
+    WiFi.mode(WIFI_OFF); // apaga el wifi 
   }
-  Serial.println();
-  Serial.println("Waiting 2min before the next round...");
-  delay(120000);
+  
+  return httpCode;
 }

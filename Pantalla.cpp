@@ -144,16 +144,16 @@ for (const auto &entry : counts) {
   tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
   tft.print(count);
   tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
-  tft.print(F("d"));
+  tft.print("d");
   tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
   tft.print(piletas * LARGO_PILETA);
-  tft.print(F(" "));
+  tft.print(" ");
   tft.setTextColor(ILI9341_GREENYELLOW, ILI9341_BLACK);
   tft.print(count * piletas * LARGO_PILETA);
-  tft.print(F("m "));
+  tft.print("m ");
   tft.setTextColor(0x90D5, ILI9341_BLACK);
   tft.print(reloj(totalTiempo));
-  tft.print(F(" "));
+  tft.print(" ");
   tft.println();
   tft.setCursor(0, tft.getCursorY()+5);
 }
@@ -165,7 +165,7 @@ void Pantalla::resumen(int tamanioFuente, DataSeries* data) {
   tft.setCursor(0, 0);
   tft.setTextSize(tamanioFuente + 1);
   tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-  tft.println(F("Resumen"));
+  tft.println("Resumen");
   tft.setCursor(0, tft.getCursorY() + 5);
   tft.setTextSize(tamanioFuente);
   for (int i = 0; i < CANT_MAX_SERIES; ++i) {
@@ -174,13 +174,13 @@ void Pantalla::resumen(int tamanioFuente, DataSeries* data) {
     tft.write(0x10); // sibolo triangulo de costado
     tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
     tft.print(data[i].piletas);
-    tft.print(F(" "));
+    tft.print(" ");
     tft.setTextColor(ILI9341_GREENYELLOW, ILI9341_BLACK);
     tft.print(data[i].piletas * LARGO_PILETA);
-    tft.print(F("m "));
+    tft.print("m ");
     tft.setTextColor(0x90D5, ILI9341_BLACK);
     tft.print(reloj(data[i].tiempo));
-    tft.print(F(" "));
+    tft.print(data[i].piletas >= 20 ? "" : " ");
     tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
     tft.println(reloj(data[i].descanso));
     tft.setCursor(0, tft.getCursorY() + 3);
@@ -188,13 +188,5 @@ void Pantalla::resumen(int tamanioFuente, DataSeries* data) {
   // cronos(cronometro.total, 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
   // metrosTot(); // imprime los metros totales 
 
-  // STRING TEST
-  // for (int i = 0; i < CANT_MAX_PILETAS; i++) {
-  //   if(pileta[i].tiempo > 0) {
-  //     if (pileta[i].pileta) Serial.print(F("P: "));
-  //     else Serial.print(F("D: "));
-  //     Serial.println(pileta[i].tiempo);
-  //   }
-  // }
   return;
 }
