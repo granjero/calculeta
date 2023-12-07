@@ -35,5 +35,6 @@ La calculeta es un dispositivo fundamental y fenomenal a la hora de nadar. Lleva
 </div>
 
 
+  Al finalizar la calculeta guarda los datos en una base de datos en la nube...
 
 * TODO tener un selector de hardware de 2bits.
