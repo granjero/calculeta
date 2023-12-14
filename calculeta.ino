@@ -133,10 +133,11 @@ void loop() {
           calculeta = DESCANSANDO;
           guardaSerie(); // guarda los datos de la serie en la estructura
           pantalla.borraContador();
-          pantalla.cronoDescanso(0);
+          pantalla.cronoDescanso(cronometro.pileta);
+          cronometro.descanso = cronometro.pileta;
           pantalla.metrosSerie(contador.piletas); // imprime los metros  
           pantalla.anotaSeries(dataSerie); // imprime las series
-          reseteaCronometros(true, false, true, false); // pileta[*] serie[] descanso[*] total[]
+          reseteaCronometros(true, false, false, false); // pileta[*] serie[] descanso[] total[]
           reseteaContadores(true, false, false, false); // pileta[*] serie[] total[] totalConDescansos[]
         } else {
           calculeta = RESUMEN;
