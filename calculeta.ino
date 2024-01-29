@@ -1,21 +1,35 @@
 #include "Button.h"
+#include "Chrono.h"
 #include "DataSeries.h"
 #include "Pantalla.h"
 #include "Conexion.h"
 
-#define BOTON     D1
 
-#define UN_SEGUNDO  1000
-// #define TIEMPO_INCREMENTO_SERIE 5000 // 10 segundos
-#define TIEMPO_PULSO_RESET      3000
+// debug
+#define DEBUG false
 
-unsigned long ultimoSegundo = 0;
-unsigned long millisAhora = 0;
-unsigned long timestampBotonPresionado = 0;
+#if DEBUG
+#define debug(msg) Serial.print(msg)
+#define debugln(msg) Serial.println(msg)
+#else
+#define debug(msg)
+#define debugln(msg)
+#endif
+
+#define BOTON D1
+#define CANT_MAX_SERIES 128
+#define CANT_MAX_PILETAS 128
+
+// #define TIEMPO_PULSO_RESET      3000
 
 bool seHaPresionadoElBoton = false;
 
 Button boton(BOTON, 750); // asegurarse de tener la ultima version madleech/Button
+
+Chrono cronoUnSegundo;
+Chrono cronoPileta(Chrono::SECONDS);
+Chrono cronoSerie(Chrono::SECONDS);
+Chrono cronoTotal(Chrono::SECONDS);
 
 Pantalla pantalla;
 
@@ -46,32 +60,23 @@ typedef struct {
 } Contadores;
 Contadores contador;
 
-typedef struct {
-  unsigned int pileta;
-  unsigned int serie;
-  unsigned int descanso;
-  unsigned int total;
-} Cronometros;
-Cronometros cronometro;
-
 void setup(){
-  Serial.begin(115200);
-  // Serial.println();
-  // Serial.println("CalculetaBis");
-  // Serial.println(calculeta);
+  if (DEBUG) Serial.begin(115200);
+  debugln("");
+  debugln("Calculeta");
+  debugln(calculeta);
+
   boton.begin();  // inicializa el boton
   inicializaCalculeta(&calculeta);
 }
 
 void loop() {
-  millisAhora = millis();
-
   seHaPresionadoElBoton = boton.pressed();
 
-  pasaElTiempoParaIncrementarSeries(&calculeta, calculeta);
+  pasaElTiempoParaIncrementarSeries(&calculeta, calculeta, cronoPileta.hasPassed(10));
 
-  if ((millisAhora - ultimoSegundo >= UN_SEGUNDO)) { // cada vez que pasa un segundo
-    ultimoSegundo = millisAhora;
+  if (cronoUnSegundo.hasPassed(1000)) { // cada vez que pasa un segundo
+    cronoUnSegundo.restart();
 
     switch (calculeta) {
       case INICIO:
@@ -81,91 +86,109 @@ void loop() {
         break;
 
       default:
-        incrementaCronometros(calculeta);
-
         if (calculeta != DESCANSANDO) {
-          pantalla.cronos(cronometro.pileta, AN_CHAR_CRON, AL_CHAR_CRON * 2, contador.piletas < 10 ? 3 : 2);
-          pantalla.cronos(cronometro.serie, AN_CHAR_CRON * 2, AL_CHAR_CONTADOR, 3);
+          pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2, contador.piletas < 10 ? 3 : 2);
+          pantalla.cronos(cronoSerie.elapsed(), AN_CHAR_CRON * 2, AL_CHAR_CONTADOR, 3);
         } else {
-          pantalla.cronoDescanso(cronometro.descanso);
+          pantalla.cronoDescanso(cronoPileta.elapsed());
         }
-        pantalla.cronos(cronometro.total, 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
+        pantalla.cronos(cronoTotal.elapsed(), 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
         break;
     }
   }
 
   if (seHaPresionadoElBoton) {
-    timestampBotonPresionado = millisAhora; //tomo el tiempo en el que se presionó el botón
-
-    // Serial.print(F("boton presionado -> estado: "));
-    // Serial.print(calculeta);
+    debug(F("boton presionado -> estado: "));
+    debugln(calculeta);
 
     switch (calculeta) {
-      case INICIO:
-        // Serial.println(F(" inicio"));
+      case INICIO: // se pulsa en la pantalla de Inicio
+        debugln(" pulso pantalla de inicio");
+
         calculeta = PILETAS;
-        pantalla.inicio();
-        reseteaCronometros(true, true, true, true); // pileta[*] serie[*] descanso[*] total[*]
-        reseteaContadores(true, true, true, true); // pileta[*] serie[*] total[*] totalConDescansos[*]
+
+        cronoUnSegundo.restart();
+        cronoPileta.restart();
+        cronoSerie.restart();
+        cronoTotal.restart();
+
         reseteaSeries();
         reseteaPiletas();
+
+        pantalla.inicio();
+        pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2 , contador.piletas < 10 ? 3 : 2);
+        pantalla.cronos(cronoSerie.elapsed(), AN_CHAR_CRON * 2, AL_CHAR_CONTADOR, 3);
+        pantalla.cronos(cronoTotal.elapsed(), 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
         pantalla.contadorPiletas(contador.piletas); // imprime el contador
         pantalla.metrosSerie(contador.piletas); // imprime los metros  
         pantalla.metrosTot(contador.total); // imprime los metros totales 
         break;
 
-      case PILETAS:
-        // Serial.println(F(" piletas"));
+      case PILETAS: // se pulsa mientras se está nadando
         calculeta = SERIES;
-        guardaPileta();
+        guardaPileta(cronoPileta.elapsed());
         incrementaContadores(true, false, true, true); // piletas[*] series[] total[*] totalConDescansos[*]
-        // pantalla.cronos(cronometro.pileta, AN_CHAR_CRON, AL_CHAR_CRON * 3, contador.piletas < 10 ? 3 : 2); // ultima pileta
-        reseteaCronometros(true, false, false, false); // pileta[*] serie[] descanso[] total[]
-        pantalla.cronos(cronometro.pileta, AN_CHAR_CRON, AL_CHAR_CRON * 2 , contador.piletas < 10 ? 3 : 2);
+        cronoPileta.restart();
+        pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2 , contador.piletas < 10 ? 3 : 2);
         pantalla.contadorPiletas(contador.piletas); // imprime el contador
         pantalla.metrosSerie(contador.piletas); // imprime los metros  
         pantalla.metrosTot(contador.total); // imprime los metros totales 
+
+        debugln(" pulso contando piletas");
+
         break;
 
-      case SERIES:
-        // Serial.println(F(" series"));
+      case SERIES: // el contador estaba rosa 
         if (contador.piletas !=  0) { // no tiene sentido una serie de 0 piletas
           calculeta = DESCANSANDO;
-          guardaSerie(); // guarda los datos de la serie en la estructura
+          guardaSerie(cronoSerie.elapsed() - cronoPileta.elapsed()); // guarda los datos de la serie en la estructura
           pantalla.borraContador();
-          pantalla.cronoDescanso(cronometro.pileta);
-          cronometro.descanso = cronometro.pileta;
+          pantalla.cronos(cronoSerie.elapsed() - cronoPileta.elapsed(), AN_CHAR_CRON * 2, AL_CHAR_CONTADOR, 3);
+          pantalla.cronoDescanso(cronoPileta.elapsed());
           pantalla.metrosSerie(contador.piletas); // imprime los metros  
           pantalla.anotaSeries(dataSerie); // imprime las series
-          reseteaCronometros(true, false, false, false); // pileta[*] serie[] descanso[] total[]
           reseteaContadores(true, false, false, false); // pileta[*] serie[] total[] totalConDescansos[]
         } else {
           calculeta = RESUMEN;
           pantalla.resumen(2, dataSerie);
           pantalla.metrosTot(contador.total); // imprime los metros totales 
-          pantalla.cronos(cronometro.total, 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
+          pantalla.cronos(cronoTotal.elapsed(), 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
 
-          conexion.pileta(piletasParaDB());
+          debugln("Resumen");
+          debugln(piletasParaDB());
+
+          pantalla.esperandoWiFi();
+          conexion.conectar();
+          pantalla.conectadoWiFi();
+          int httpCode = conexion.pileta( piletasParaDB() );
+          if( httpCode == 201 ) pantalla.finalizadoWiFi();
+          else pantalla.errorWiFi(httpCode);
         }
+
+        debugln(" pulso con el contador rosa para cerrar la serie");
+        debug(" tiempo pileta ");
+        debugln(cronoPileta.elapsed());
+
         break;
 
       case DESCANSANDO:
-        // Serial.println(F(" descansando"));
         calculeta = PILETAS;
+        guardaDescanso(cronoPileta.elapsed());
+        guardaSerieDescanso(cronoPileta.elapsed());
         pantalla.borraContador();
         pantalla.contadorPiletas(contador.piletas); // imprime el contador
         pantalla.metrosSerie(contador.piletas); // imprime los metros de la serie 
-        guardaDescanso();
-        guardaSerieDescanso();
         incrementaContadores(false, true, false, true); // piletas[] series[*] total[] totalConDescansos[*]
-        reseteaCronometros(true, true, true, false); // pileta[*] serie[*] descanso[*] total[]
+        cronoPileta.restart();
+        cronoSerie.restart();
+        debugln(" pulso mientra se estaba descansando");
         break;
 
       case RESUMEN:
-        // Serial.println(F("resumen"));
+        debugln(F("resumen"));
         pantalla.resumen(1, dataSerie);
         pantalla.metrosTot(contador.total); // imprime los metros totales 
-        pantalla.cronos(cronometro.total, 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
+        pantalla.cronos(cronoTotal.elapsed(), 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
         break;
     }
   }
@@ -174,7 +197,12 @@ void loop() {
 
 void inicializaCalculeta(Calculeta* nuevoEstado) {
   *nuevoEstado = INICIO;
-  reseteaCronometros(true, true, true, true);
+
+  cronoUnSegundo.restart();
+  cronoPileta.restart();
+  cronoSerie.restart();
+  cronoTotal.restart();
+
   reseteaContadores(true, true, true, true);
   reseteaSeries();
   pantalla.logoCalculeta();
@@ -187,22 +215,6 @@ void incrementaContadores(boolean piletas, boolean series, boolean total, boolea
   if (series) contador.series++;
   if (total) contador.total++;
   if (totalConDescansos) contador.totalConDescansos++;
-  return;
-}
-
-void incrementaCronometros(Calculeta estado) {
-  cronometro.pileta++;
-  cronometro.total++;
-  if (estado == DESCANSANDO) cronometro.descanso++;
-  else cronometro.serie++;
-  return;
-}
-
-void reseteaCronometros(boolean pileta, boolean serie, boolean descanso, boolean total) {
-  if (pileta) cronometro.pileta = 0;
-  if (serie) cronometro.serie = 0;
-  if (descanso) cronometro.descanso = 0;
-  if (total) cronometro.total = 0;
   return;
 }
 
@@ -231,30 +243,30 @@ void reseteaPiletas() {
   return;
 }
 
-void guardaPileta() {
+void guardaPileta(unsigned long tiempo) {
   pileta[contador.totalConDescansos].pileta = true;
-  pileta[contador.totalConDescansos].tiempo = cronometro.pileta;
+  pileta[contador.totalConDescansos].tiempo = tiempo;
   return;
 }
 
-void guardaDescanso() {
+void guardaDescanso(unsigned long tiempo) {
   pileta[contador.totalConDescansos].pileta = false;
-  pileta[contador.totalConDescansos].tiempo = cronometro.pileta;
+  pileta[contador.totalConDescansos].tiempo = tiempo;
   return;
 }
 
-void guardaSerie() {
+void guardaSerie(unsigned long tiempo) {
   dataSerie[contador.series].piletas = contador.piletas;
-  dataSerie[contador.series].tiempo = cronometro.serie;
+  dataSerie[contador.series].tiempo = tiempo;
   return;
 }
 
-void guardaSerieDescanso() {
-  dataSerie[contador.series].descanso = cronometro.descanso;
+void guardaSerieDescanso(unsigned long tiempo) {
+  dataSerie[contador.series].descanso = tiempo;
   return;
 }
 
-void pasaElTiempoParaIncrementarSeries(Calculeta* nuevoEstado, Calculeta estado ) {
+void pasaElTiempoParaIncrementarSeries(Calculeta* nuevoEstado, Calculeta estado, bool tiempoCumplido ) {
   switch(estado) {
     case INICIO:
       break;
@@ -266,7 +278,7 @@ void pasaElTiempoParaIncrementarSeries(Calculeta* nuevoEstado, Calculeta estado 
       break;
 
     default:
-      if (millis() - timestampBotonPresionado >= TIEMPO_INCREMENTO_SERIE) *nuevoEstado = PILETAS;
+      if (tiempoCumplido) *nuevoEstado = PILETAS;
       else *nuevoEstado = SERIES;
       break;
   }
