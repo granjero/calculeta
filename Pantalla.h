@@ -21,7 +21,7 @@ public:
    void inicio();
    void borraContador();
    void logoCalculeta();
-   void macAddress(){
+   void macAddress(String mac);
    void esperandoWiFi();
    void conectadoWiFi();
    void finalizadoWiFi();

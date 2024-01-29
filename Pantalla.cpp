@@ -36,7 +36,7 @@ void Pantalla::logoCalculeta(){
 }
 
 void Pantalla::macAddress(String mac){
-  tft.setTextSize(2);
+  tft.setTextSize(1);
   tft.setCursor(0, AL_PANTALLA - AL_FUENTE_UNITARIA);
   tft.println(mac);
 }

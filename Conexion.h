@@ -7,6 +7,7 @@
 
 class Conexion {
    public:
+      String macAddress = WiFi.macAddress();
       Conexion();
       void conectar();
       int pileta(String pileta);

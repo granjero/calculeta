@@ -29,10 +29,11 @@ void Conexion::conectar() {
  * 201 Created
 */
 int Conexion::pileta(String pileta) {
-  conectar();
+  // conectar();
   int httpCode;
-  String mac = WiFi.macAddress();
+  String mac = macAddress;
   mac.replace(":", "");
+  // Serial.println(mac);
   if (https.begin(client, apiUrlPileta)) {  // HTTPS
     // Serial.println(apiUrlPileta);
     https.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -43,13 +44,15 @@ int Conexion::pileta(String pileta) {
     httpRequestData += mac;
     httpRequestData += "&pileta=";
     httpRequestData += pileta;
+  // Serial.println(httpRequestData);
     httpCode = https.POST(httpRequestData);
-    // Serial.printf("[HTTPS] TEST REQUEST CODE: %d\n", httpCode);
+    Serial.printf("[HTTPS] TEST REQUEST CODE: %d\n", httpCode);
     String payload = https.getString();
     // Serial.println(httpCode);
-    // return payload;
-  } //else Serial.println(httpCode); 
-  // Serial.println(mac);
+    // Serial.println(payload);
+  } else {// Serial.println(httpCode);
+  }
+   // Serial.println(mac);
   
   if (httpCode == 201) {
     WiFi.mode(WIFI_OFF); // apaga el wifi 

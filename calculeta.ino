@@ -206,6 +206,7 @@ void inicializaCalculeta(Calculeta* nuevoEstado) {
   reseteaContadores(true, true, true, true);
   reseteaSeries();
   pantalla.logoCalculeta();
+  pantalla.macAddress(conexion.macAddress);
   return;
 }
 
