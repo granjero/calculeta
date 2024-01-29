@@ -35,6 +35,12 @@ void Pantalla::logoCalculeta(){
   tft.drawXBitmap(0,0, logo_bits, logo_w, logo_h, 0x002D);
 }
 
+void Pantalla::macAddress(String mac){
+  tft.setTextSize(2);
+  tft.setCursor(0, AL_PANTALLA - AL_FUENTE_UNITARIA);
+  tft.println(mac);
+}
+
 void Pantalla::contadorPiletas(unsigned int contador) {
   int cantDigitos = contador < 10 ? 1 : 2;
   canvas_contador_piletas.fillScreen(0);    // Clear canvas (not display)
@@ -188,5 +194,38 @@ void Pantalla::resumen(int tamanioFuente, DataSeries* data) {
   // cronos(cronometro.total, 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
   // metrosTot(); // imprime los metros totales 
 
+  return;
+}
+
+void Pantalla::esperandoWiFi() {
+  tft.setTextColor(ILI9341_CYAN, ILI9341_BLACK);
+  tft.setTextSize(1);
+  tft.setCursor(130, 10);
+  tft.println("esperando wifi");
+  return;
+}
+
+void Pantalla::conectadoWiFi() {
+  tft.setTextColor(ILI9341_ORANGE, ILI9341_BLACK);
+  tft.setTextSize(1);
+  tft.setCursor(130, 10);
+  tft.println("wifi conectado");
+  return;
+}
+
+void Pantalla::finalizadoWiFi() {
+  tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
+  tft.setTextSize(1);
+  tft.setCursor(130, 10);
+  tft.println("Datos Enviados OK");
+  return;
+}
+
+void Pantalla::errorWiFi(int error) {
+  tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
+  tft.setTextSize(1);
+  tft.setCursor(130, 10);
+  tft.print("Error nro: ");
+  tft.println(error);
   return;
 }

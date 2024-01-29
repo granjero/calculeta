@@ -21,6 +21,11 @@ public:
    void inicio();
    void borraContador();
    void logoCalculeta();
+   void macAddress(){
+   void esperandoWiFi();
+   void conectadoWiFi();
+   void finalizadoWiFi();
+   void errorWiFi(int error);
 
 private:
    #define TFT_CS    D2
