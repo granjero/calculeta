@@ -1,4 +1,4 @@
-#include "Button.h"
+#include "Button.h" // asegurarse de tener la ultima version madleech/Button
 #include "Chrono.h"
 #include "DataSeries.h"
 #include "Pantalla.h"
@@ -23,8 +23,9 @@
 // #define TIEMPO_PULSO_RESET      3000
 
 bool seHaPresionadoElBoton = false;
+bool puedoPonerCelesteElContador = false;
 
-Button boton(BOTON, 750); // asegurarse de tener la ultima version madleech/Button
+Button boton(BOTON, 750); 
 
 Chrono cronoUnSegundo;
 Chrono cronoPileta(Chrono::SECONDS);
@@ -73,7 +74,7 @@ void setup(){
 void loop() {
   seHaPresionadoElBoton = boton.pressed();
 
-  pasaElTiempoParaIncrementarSeries(&calculeta, calculeta, cronoPileta.hasPassed(10));
+  calculeta = contandoPiletasOSeries(calculeta, cronoPileta.hasPassed(10));
 
   if (cronoUnSegundo.hasPassed(1000)) { // cada vez que pasa un segundo
     cronoUnSegundo.restart();
@@ -87,7 +88,7 @@ void loop() {
 
       default:
         if (calculeta != DESCANSANDO) {
-          pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2, contador.piletas < 10 ? 3 : 2);
+          // pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2, contador.piletas < 10 ? 3 : 2);
           pantalla.cronos(cronoSerie.elapsed(), AN_CHAR_CRON * 2, AL_CHAR_CONTADOR, 3);
         } else {
           pantalla.cronoDescanso(cronoPileta.elapsed());
@@ -95,6 +96,17 @@ void loop() {
         pantalla.cronos(cronoTotal.elapsed(), 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
         break;
     }
+
+    if (puedoPonerCelesteElContador) // barra de progreso
+    {
+      pantalla.barraProgreso(cronoPileta.elapsed());
+    }
+  }
+
+  if (puedoPonerCelesteElContador && cronoPileta.hasPassed(11))
+  {
+    poneCelesteElContador();
+    puedoPonerCelesteElContador = false;
   }
 
   if (seHaPresionadoElBoton) {
@@ -116,21 +128,22 @@ void loop() {
         reseteaPiletas();
 
         pantalla.inicio();
-        pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2 , contador.piletas < 10 ? 3 : 2);
+        // pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2 , contador.piletas < 10 ? 3 : 2);
         pantalla.cronos(cronoSerie.elapsed(), AN_CHAR_CRON * 2, AL_CHAR_CONTADOR, 3);
         pantalla.cronos(cronoTotal.elapsed(), 5, AL_PANTALLA - AL_FUENTE_UNITARIA * 3, 3);
-        pantalla.contadorPiletas(contador.piletas); // imprime el contador
+        pantalla.contadorPiletas(contador.piletas, CELESTE); // imprime el contador
         pantalla.metrosSerie(contador.piletas); // imprime los metros  
         pantalla.metrosTot(contador.total); // imprime los metros totales 
         break;
 
       case PILETAS: // se pulsa mientras se está nadando
         calculeta = SERIES;
+        puedoPonerCelesteElContador = true;
         guardaPileta(cronoPileta.elapsed());
         incrementaContadores(true, false, true, true); // piletas[*] series[] total[*] totalConDescansos[*]
         cronoPileta.restart();
-        pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2 , contador.piletas < 10 ? 3 : 2);
-        pantalla.contadorPiletas(contador.piletas); // imprime el contador
+        // pantalla.cronos(cronoPileta.elapsed(), AN_CHAR_CRON, AL_CHAR_CRON * 2 , contador.piletas < 10 ? 3 : 2);
+        pantalla.contadorPiletas(contador.piletas, ILI9341_GREEN); // imprime el contador
         pantalla.metrosSerie(contador.piletas); // imprime los metros  
         pantalla.metrosTot(contador.total); // imprime los metros totales 
 
@@ -139,7 +152,8 @@ void loop() {
         break;
 
       case SERIES: // el contador estaba rosa 
-        if (contador.piletas !=  0) { // no tiene sentido una serie de 0 piletas
+        puedoPonerCelesteElContador = false;
+        if (contador.piletas !=  0) { // comienza el descanso
           calculeta = DESCANSANDO;
           guardaSerie(cronoSerie.elapsed() - cronoPileta.elapsed()); // guarda los datos de la serie en la estructura
           pantalla.borraContador();
@@ -173,10 +187,11 @@ void loop() {
 
       case DESCANSANDO:
         calculeta = PILETAS;
+        puedoPonerCelesteElContador = true;
         guardaDescanso(cronoPileta.elapsed());
         guardaSerieDescanso(cronoPileta.elapsed());
         pantalla.borraContador();
-        pantalla.contadorPiletas(contador.piletas); // imprime el contador
+        pantalla.contadorPiletas(contador.piletas, CELESTE); // imprime el contador
         pantalla.metrosSerie(contador.piletas); // imprime los metros de la serie 
         incrementaContadores(false, true, false, true); // piletas[] series[*] total[] totalConDescansos[*]
         cronoPileta.restart();
@@ -267,7 +282,7 @@ void guardaSerieDescanso(unsigned long tiempo) {
   return;
 }
 
-void pasaElTiempoParaIncrementarSeries(Calculeta* nuevoEstado, Calculeta estado, bool tiempoCumplido ) {
+Calculeta contandoPiletasOSeries(Calculeta estado, bool pasaronDiezSegundos) {
   switch(estado) {
     case INICIO:
       break;
@@ -279,11 +294,22 @@ void pasaElTiempoParaIncrementarSeries(Calculeta* nuevoEstado, Calculeta estado,
       break;
 
     default:
-      if (tiempoCumplido) *nuevoEstado = PILETAS;
-      else *nuevoEstado = SERIES;
+      if (pasaronDiezSegundos)
+      {
+        return PILETAS;
+      }
+      else
+      {
+        return SERIES;
+      }
       break;
   }
-  return;
+  return estado;
+}
+
+void poneCelesteElContador()
+{
+  pantalla.contadorPiletas(contador.piletas, CELESTE);
 }
 
 String piletasParaDB() {

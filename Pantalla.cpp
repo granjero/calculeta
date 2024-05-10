@@ -41,27 +41,43 @@ void Pantalla::macAddress(String mac){
   tft.println(mac);
 }
 
-void Pantalla::contadorPiletas(unsigned int contador) {
+void Pantalla::barraProgreso(unsigned int contador)
+{
+  int y = AL_CHAR_CONTADOR - 10;
+  int largoSegmento = 24;
+  if (contador <= 1) tft.fillRect(0, y, AN_PANTALLA, 4,  CELESTE);
+  tft.fillRect((AN_PANTALLA - (largoSegmento * contador)), y, AN_PANTALLA, 4, ILI9341_BLACK);
+}
+
+void Pantalla::contadorPiletas(unsigned int contador, uint16_t color) {
   int cantDigitos = contador < 10 ? 1 : 2;
   canvas_contador_piletas.fillScreen(0);    // Clear canvas (not display)
   canvas_contador_piletas.setCursor(0, 0); // Pos. is BASE LINE when using fonts!
   canvas_contador_piletas.setTextSize(TAM_FUENTE_CONTADOR);
   canvas_contador_piletas.print(contador);
+  /*
+   * implementacion previa 
   tft.drawBitmap(AN_PANTALLA - AN_CHAR_CONTADOR * cantDigitos, 0,
   canvas_contador_piletas.getBuffer(), canvas_contador_piletas.width(), canvas_contador_piletas.height(),
-  0x653E, ILI9341_BLACK);
+  color, ILI9341_BLACK);
+  */
+
+  tft.drawBitmap(((AN_PANTALLA / 2) - ((AN_CHAR_CONTADOR * cantDigitos) / 2)), 0,
+  canvas_contador_piletas.getBuffer(), canvas_contador_piletas.width(), canvas_contador_piletas.height(),
+  color, ILI9341_BLACK);
+
   return;
 }
 
 void Pantalla::cronos(int numero, int x, int y, int tamFuente) {
   int X = x;
   uint16_t color = ILI9341_WHITE;
-  if((numero <= TIEMPO_INCREMENTO_SERIE / 1000) && (y < AL_CHAR_CONTADOR)){
-    color = 0xFB54;
-  }
-  if(y == AL_CHAR_CRON * 3){
-    color = 0x07E3;
-  }
+  // if((numero < TIEMPO_INCREMENTO_SERIE / 1000) && (y < AL_CHAR_CONTADOR)){
+  //   color = 0xFB54;
+  // }
+  // if(y == AL_CHAR_CRON * 3){
+  //   color = 0x07E3;
+  // }
   if (tamFuente == TAM_FUENTE_CRON_CHICO) {
     canvas_crono.setCursor(canvas_crono.width() - AN_CHAR_CRON_CHICO * 5, 0); // Pos. is BASE LINE when using fonts!
     X = AN_CHAR_CRON_CHICO * 5 - canvas_crono.width() ;

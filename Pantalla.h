@@ -11,7 +11,7 @@
 class Pantalla {
 public:
    Pantalla(); // Default constructor
-   void contadorPiletas(unsigned int contador); 
+   void contadorPiletas(unsigned int contador, uint16_t); 
    void cronos(int numero, int x, int y, int tamFuente);
    void cronoDescanso(int numero);
    void metrosSerie(unsigned int largos);
@@ -26,8 +26,13 @@ public:
    void conectadoWiFi();
    void finalizadoWiFi();
    void errorWiFi(int error);
+   void barraProgreso(unsigned int contador);
+
+   #define ROSADO 0xFB54
+   #define CELESTE 0x653E
 
 private:
+   // pines
    #define TFT_CS    D2
    #define TFT_RST   D3
    #define TFT_DC    D4
